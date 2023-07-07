@@ -1,0 +1,19 @@
+name: Check for update
+
+on:
+  #schedule:
+  #  - cron:  '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for update
+        shell: python
+        run: |
+          import requests
+          lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
+          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')
+          sys.exit(0 if lol_ver == local_ver else 1)
+      #- uses: actions/checkout@v3
