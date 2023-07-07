@@ -1,0 +1,18 @@
+name: Update the content
+on:
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: windows-latest
+    steps:
+      - name: Setup the League Client
+        id: league-client
+        uses: lol-tracker/setup-league-client@latest
+        with:
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
+          region: ${{ secrets.LOL_REGION }}
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
