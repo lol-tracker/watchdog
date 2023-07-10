@@ -1,6 +1,5 @@
 name: Update the content
-on:
-  workflow_dispatch:
+on: [workflow_call, workflow_dispatch]
 jobs:
   update:
     runs-on: windows-latest
@@ -17,10 +16,10 @@ jobs:
         with:
           repository: 'lol-tracker/content'
           path: 'content'
-        # TODO
       - name: Parse the content
         shell: pwsh
-        run: '& $env:GITHUB_ACTION_PATH/Update.ps1'
+        working-directory: content
+        run: '& ../watchdog/scripts/Update.ps1'
         env:
           RCS_PASSWORD: ${{ steps.league-client.outputs.rcs-password }}
           RCS_PORT: ${{ steps.league-client.outputs.rcs-port }}
@@ -29,6 +28,7 @@ jobs:
           LCU_PORT: ${{ steps.league-client.outputs.lcu-port }}
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
       - name: Commit and push new content
+        working-directory: content
         # TODO: Proper commit name
         run: |
           git add .
