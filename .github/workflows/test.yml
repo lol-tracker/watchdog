@@ -12,4 +12,5 @@ jobs:
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
   later:
-    steps: echo Done
+    steps:
+      run: echo Done
