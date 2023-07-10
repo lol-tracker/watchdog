@@ -6,8 +6,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout content repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
+  later:
+    steps: echo Done
