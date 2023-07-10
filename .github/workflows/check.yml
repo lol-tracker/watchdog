@@ -7,21 +7,33 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     outputs:
       is_outdated: ${{ steps.check.outputs.is_outdated }}
     steps:
+      - name: Setup the League Client
+        id: league-client
+        uses: lol-tracker/setup-league-client@latest
+        with:
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
+          region: ${{ secrets.LOL_REGION }}
       - name: Check for update
         id: check
         shell: python
         run: |
           import os
           import requests
-          lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0].split('.')
-          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt').text[1:-1].split('+')[0].split('.')
-          is_outdated = lol_ver[0] != local_ver[0] or lol_ver[1] != local_ver[1]
+          lol_ver = requests.get('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/').text
+          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt').text
+          is_outdated = lol_ver != local_ver
+          print(f'lol_ver={lol_ver}')
+          print(f'local_ver={local_ver}')
+          print(f'is_outdated={is_outdated}')
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'is_outdated={is_outdated}', file=fh)
+      - name: Debug
+        run: "echo is_outdated: ${{ steps.check.outputs.is_outdated }}"
   update:
     needs: check
     if: ${{ needs.check.outputs.is_outdated }}
