@@ -3,7 +3,7 @@ on: workflow_dispatch
 jobs:
   install:
     name: Test the action
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       # - name: Add github.com to known hosts
       #   shell: bash
