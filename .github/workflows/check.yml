@@ -26,7 +26,7 @@ jobs:
         run: |
           import os
           import requests
-          lol_ver = requests.get('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/').text
+          lol_ver = requests.get('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', verify=False).text
           local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt').text
           is_outdated = lol_ver != local_ver
           print(f'lol_ver={lol_ver}')
