@@ -15,6 +15,7 @@ jobs:
         id: check
         shell: python
         run: |
+          import os
           import requests
           lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
           local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')
