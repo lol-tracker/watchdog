@@ -32,7 +32,7 @@ jobs:
             const https = require('https');
 
             const lol_ver = await (await fetch('https://127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', {
-              headers: { 'Authorization': 'Basic ' + base64.encode('riot:${{ steps.league-client.outputs.lcu-password }}') },
+              headers: { 'Authorization': 'Basic ' + btoa('riot:${{ steps.league-client.outputs.lcu-password }}') },
               agent: new https.Agent({
                 rejectUnauthorized: false,
               }),
