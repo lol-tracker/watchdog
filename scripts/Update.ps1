@@ -15,7 +15,8 @@ function Invoke-RiotRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100
+        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
     While ($True) {
@@ -23,14 +24,14 @@ function Invoke-RiotRequest {
             $pass = ConvertTo-SecureString $password -AsPlainText -Force
             $cred = New-Object -TypeName PSCredential -ArgumentList 'riot', $pass
 
-            $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
+            Invoke-RestMethod "https://127.0.0.1:$port$path" `
                 -SkipCertificateCheck `
                 -Method $method `
                 -Authentication 'Basic' `
                 -Credential $cred `
                 -ContentType 'application/json' `
                 -Body $($body | ConvertTo-Json)
-            Return $result | ConvertTo-Json
+                -OutFile $OutFile
         } Catch {
             $attempts--
             If ($attempts -le 0) {
@@ -48,10 +49,11 @@ function Invoke-RCSRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100
+        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $attempts
+    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $attempts $OutFile
 }
 
 function Invoke-LOLRequest {
@@ -59,10 +61,11 @@ function Invoke-LOLRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100
+        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $attempts
+    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $attempts $OutFile
 }
 
 function Create-Folder {
@@ -76,14 +79,14 @@ function Create-Folder {
 Create-Folder 'rcs'
 Create-Folder 'lol'
 
-Invoke-RCSRequest '/swagger/v2/swagger.json' >> 'rcs/swagger.json'
-Invoke-RCSRequest '/swagger/v3/openapi.json' >> 'rcs/openapi.json'
+Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile 'rcs/swagger.json'
+Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile 'rcs/openapi.json'
 
-Invoke-LOLRequest '/swagger/v2/swagger.json' >> 'lol/swagger.json'
-Invoke-LOLRequest '/swagger/v3/openapi.json' >> 'lol/openapi.json'
-Invoke-LOLRequest '/lol-patch/v1/game-version' >> 'lol/version.txt'
-Invoke-LOLRequest '/lol-maps/v1/maps' >> 'lol/maps.json'
-Invoke-LOLRequest '/lol-game-queues/v1/queues' >> 'lol/queues.json'
-Invoke-LOLRequest '/lol-store/v1/catalog' >> 'lol/catalog.json'
+Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile 'lol/swagger.json'
+Invoke-LOLRequest '/swagger/v3/openapi.json' -OutFile 'lol/openapi.json'
+Invoke-LOLRequest '/lol-patch/v1/game-version' -OutFile 'lol/version.txt'
+Invoke-LOLRequest '/lol-maps/v1/maps' -OutFile 'lol/maps.json'
+Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile 'lol/queues.json'
+Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile 'lol/catalog.json'
 
 Write-Host 'Success!'
