@@ -29,6 +29,8 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const https = require('https');
+
             const httpsAgent = new https.Agent({
               rejectUnauthorized: false,
             });
