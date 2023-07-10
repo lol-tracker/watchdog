@@ -8,7 +8,7 @@ jobs:
       - name: Add github.com to known hosts
         shell: bash
         run: |
-          mkdir .ssh
+          mkdir ~/.ssh/
           ssh-keyscan github.com >> ~/.ssh/known_hosts
       - name: Checkout content repository
         uses: actions/checkout@v3
