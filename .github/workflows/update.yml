@@ -39,7 +39,7 @@ jobs:
           git config --global user.email ""
           git config --global user.name "lol-tracker-bot"
           git add .
-          git commit -m "Updated to version $(cat content/lol/version.txt | cut -d "\"" -f 2)"
+          git commit -m "Updated to version $(cat lol/version.txt | cut -d "\"" -f 2)"
           git push
 
 
