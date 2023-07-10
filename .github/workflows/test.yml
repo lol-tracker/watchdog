@@ -11,7 +11,5 @@ jobs:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
-  later:
-    steps:
       - name: Done
         run: echo Done
