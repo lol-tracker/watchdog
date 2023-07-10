@@ -24,7 +24,7 @@ function Invoke-RiotRequest {
             $pass = ConvertTo-SecureString $password -AsPlainText -Force
             $cred = New-Object -TypeName PSCredential -ArgumentList 'riot', $pass
 
-            Invoke-RestMethod "https://127.0.0.1:$port$path" `
+            $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
                 -SkipCertificateCheck `
                 -Method $method `
                 -Authentication 'Basic' `
@@ -32,6 +32,7 @@ function Invoke-RiotRequest {
                 -ContentType 'application/json' `
                 -Body $($body | ConvertTo-Json) `
                 -OutFile $OutFile
+            return $result
         } Catch {
             $attempts--
             If ($attempts -le 0) {
