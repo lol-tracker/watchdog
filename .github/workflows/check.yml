@@ -18,24 +18,30 @@ jobs:
           username: ${{ secrets.LOL_USERNAME }}
           password: ${{ secrets.LOL_PASSWORD }}
           region: ${{ secrets.LOL_REGION }}
-      - name: Install requests library
-        run: pip install requests
+      # - name: Checkout content repository
+      #   uses: actions/checkout@v3
+      #   with:
+      #     repository: 'lol-tracker/content'
+      #     ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+      #     path: 'content'
       - name: Check for update
         id: check
-        shell: python
-        run: |
-          import os
-          import requests
-          lol_ver = requests.get('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', verify=False).text
-          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt').text
-          is_outdated = lol_ver != local_ver
-          print(f'lol_ver={lol_ver}')
-          print(f'local_ver={local_ver}')
-          print(f'is_outdated={is_outdated}')
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-            print(f'is_outdated={is_outdated}', file=fh)
-      - name: Debug
-        run: "echo is_outdated: ${{ steps.check.outputs.is_outdated }}"
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const httpsAgent = new https.Agent({
+              rejectUnauthorized: false,
+            });
+
+            const lol_ver = await (await fetch('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', {
+              agent: httpsAgent,
+            })).text();
+            const local_ver = await (await fetch('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')).text();
+            const is_outdated = lol_ver != local_ver
+            print(`lol_ver: ${lol_ver}`);
+            print(`local_ver: ${local_ver}`);
+            print(`is_outdated: ${is_outdated}`);
+            core.setOutput('is_outdated', 'is_outdated');
   update:
     needs: check
     if: ${{ needs.check.outputs.is_outdated }}
