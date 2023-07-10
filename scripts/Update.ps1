@@ -30,7 +30,7 @@ function Invoke-RiotRequest {
                 -Authentication 'Basic' `
                 -Credential $cred `
                 -ContentType 'application/json' `
-                -Body $($body | ConvertTo-Json)
+                -Body $($body | ConvertTo-Json) `
                 -OutFile $OutFile
         } Catch {
             $attempts--
