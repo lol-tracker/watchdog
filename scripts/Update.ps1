@@ -30,7 +30,7 @@ function Invoke-RiotRequest {
                 -Credential $cred `
                 -ContentType 'application/json' `
                 -Body $($body | ConvertTo-Json)
-            Return $result
+            Return $result | ConvertTo-Json
         } Catch {
             $attempts--
             If ($attempts -le 0) {
