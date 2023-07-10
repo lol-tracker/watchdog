@@ -1,12 +1,12 @@
 #requires -PSEdition Core
 
 $RCS_PWD = $env:RCS_PASSWORD
-$RCS_DIR = $env:RCS_DIRECTORY
+$RCS_DIR = $env:RCS_DIR
 $RCS_PORT = $env:RCS_PORT
 
-$LOL_PWD = $env:LOL_PASSWORD
-$LOL_DIR = $env:LOL_DIRECTORY
-$LOL_PORT = $env:LOL_PORT
+$LOL_PWD = $env:LCU_PASSWORD
+$LOL_DIR = $env:LCU_DIR
+$LOL_PORT = $env:LCU_PORT
 
 function Invoke-RiotRequest {
     Param (
