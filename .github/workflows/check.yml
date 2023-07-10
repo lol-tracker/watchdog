@@ -31,17 +31,15 @@ jobs:
           script: |
             const https = require('https');
 
-            const httpsAgent = new https.Agent({
-              rejectUnauthorized: false,
-            });
-
-            const lol_ver_url = 'https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version';
-            console.log(lol_ver_url);
+            const lol_ver_url = 'https://127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version';
             console.log(${{ steps.league-client.outputs.lcu-password }});
             console.log(${{ steps.league-client.outputs.lcu-port }});
 
             const lol_ver = await (await fetch(lol_ver_url, {
-              agent: httpsAgent,
+              headers: { 'Authorization': 'Basic ' + base64.encode('riot:${{ steps.league-client.outputs.lcu-password }}') },
+              agent: new https.Agent({
+                rejectUnauthorized: false,
+              }),
             })).text();
             const local_ver = await (await fetch('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')).text();
             const is_outdated = lol_ver != local_ver
