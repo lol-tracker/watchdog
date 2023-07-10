@@ -35,7 +35,12 @@ jobs:
               rejectUnauthorized: false,
             });
 
-            const lol_ver = await (await fetch('https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', {
+            const lol_ver_url = 'https://riot:${{ steps.league-client.outputs.lcu-password }}@127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version';
+            console.log(lol_ver_url);
+            console.log(${{ steps.league-client.outputs.lcu-password }});
+            console.log(${{ steps.league-client.outputs.lcu-port }});
+
+            const lol_ver = await (await fetch(lol_ver_url, {
               agent: httpsAgent,
             })).text();
             const local_ver = await (await fetch('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')).text();
