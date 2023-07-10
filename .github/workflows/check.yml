@@ -25,8 +25,11 @@ jobs:
   update:
     runs-on: windows-latest
     needs: check
-    if: ${{ needs.check.outputs.is_outdated }} 
+    if: ${{ needs.check.outputs.is_outdated }}
     steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
       - name: Update
         id: update
-        uses: ./.github/actions/update
+        uses: ./.github/workflows/update.yml
