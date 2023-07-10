@@ -1,0 +1,38 @@
+name: Update the content
+on:
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: windows-latest
+    steps:
+      - name: Setup the League Client
+        id: league-client
+        uses: lol-tracker/setup-league-client@latest
+        with:
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
+          region: ${{ secrets.LOL_REGION }}
+      - name: Checkout content repository
+        uses: actions/checkout@v3
+        with:
+          repository: 'lol-tracker/content'
+          path: 'content'
+        # TODO
+      - name: Parse the content
+        shell: pwsh
+        run: '& $env:GITHUB_ACTION_PATH/Update.ps1'
+        env:
+          RCS_PASSWORD: ${{ steps.league-client.outputs.rcs-password }}
+          RCS_PORT: ${{ steps.league-client.outputs.rcs-port }}
+          RCS_DIR: ${{ steps.league-client.outputs.rcs-directory }}
+          LCU_PASSWORD: ${{ steps.league-client.outputs.lcu-password }}
+          LCU_PORT: ${{ steps.league-client.outputs.lcu-port }}
+          LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
+      - name: Commit and push new content
+        # TODO: Proper commit name
+        run: |
+          git add .
+          git commit -m "generated"
+          git push
+
+
