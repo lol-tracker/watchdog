@@ -10,10 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for update
+        id: check
         shell: python
         run: |
           import requests
           lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
           local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'is_updated={lol_version != local_ver}', file=fh)
           sys.exit(0 if lol_ver == local_ver else 1)
-      #- uses: actions/checkout@v3
+  update:
+    runs-on: windows-latest
+    if: ${{ jobs.check.steps.check.outputs.is_updated == false }} 
+    steps:
+      - name: Update
+        id: update
+        uses: ./.github/actions/update
