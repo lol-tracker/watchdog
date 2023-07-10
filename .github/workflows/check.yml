@@ -8,6 +8,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      is_outdated: ${{ steps.check.outputs.is_outdated }}
     steps:
       - name: Check for update
         id: check
@@ -16,12 +18,13 @@ jobs:
           import requests
           lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
           local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')
+          is_outdated = lol_version != local_ver
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-            print(f'is_updated={lol_version != local_ver}', file=fh)
-          sys.exit(0 if lol_ver == local_ver else 1)
+            print(f'is_outdated={is_outdated}', file=fh)
   update:
     runs-on: windows-latest
-    if: ${{ jobs.check.steps.check.outputs.is_updated == false }} 
+    needs: check
+    if: ${{ needs.check.outputs.is_outdated }} 
     steps:
       - name: Update
         id: update
