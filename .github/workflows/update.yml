@@ -36,10 +36,10 @@ jobs:
         working-directory: content
         # TODO: Proper commit name
         run: |
-          git config --global user.email "user344@gmail.com"
-          git config --global user.name "User344"
+          git config --global user.email ""
+          git config --global user.name "lol-tracker-bot"
           git add .
-          git commit -m "generated"
+          git commit -m "Updated to version $(cat content/lol/version.txt | cut -d "\"" -f 2)"
           git push
 
 

@@ -17,9 +17,9 @@ jobs:
         run: |
           import os
           import requests
-          lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0]
-          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')
-          is_outdated = lol_ver != local_ver
+          lol_ver = requests.get('https://ddragon.leagueoflegends.com/api/versions.json').json()[0].split('.')
+          local_ver = requests.get('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt').text[1:-1].split('+')[0].split('.')
+          is_outdated = lol_ver[0] != local_ver[0] or lol_ver[1] != local_ver[1]
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f'is_outdated={is_outdated}', file=fh)
   update:
