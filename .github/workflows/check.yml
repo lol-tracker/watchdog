@@ -40,9 +40,9 @@ jobs:
             })).text();
             const local_ver = await (await fetch('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')).text();
             const is_outdated = lol_ver != local_ver
-            print(`lol_ver: ${lol_ver}`);
-            print(`local_ver: ${local_ver}`);
-            print(`is_outdated: ${is_outdated}`);
+            console.log(`lol_ver: ${lol_ver}`);
+            console.log(`local_ver: ${local_ver}`);
+            console.log(`is_outdated: ${is_outdated}`);
             core.setOutput('is_outdated', 'is_outdated');
   update:
     needs: check
