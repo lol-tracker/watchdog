@@ -11,6 +11,10 @@ jobs:
           username: ${{ secrets.LOL_USERNAME }}
           password: ${{ secrets.LOL_PASSWORD }}
           region: ${{ secrets.LOL_REGION }}
+      - name: Checkout watchdog repository
+        uses: actions/checkout@v3
+        with:
+          path: 'watchdog'
       - name: Checkout content repository
         uses: actions/checkout@v3
         with:
