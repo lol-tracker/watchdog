@@ -47,3 +47,7 @@ jobs:
     needs: check
     if: ${{ needs.check.outputs.is_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
+    secrets:
+      LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
+      LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
+      LOL_REGION: ${{ secrets.LOL_REGION }}

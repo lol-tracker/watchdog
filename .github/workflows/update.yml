@@ -1,5 +1,14 @@
 name: Update the content
-on: [workflow_call, workflow_dispatch]
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      LOL_USERNAME:
+        required: true
+      LOL_PASSWORD:
+        required: true
+      LOL_REGION:
+        required: true
 jobs:
   update:
     runs-on: windows-latest
