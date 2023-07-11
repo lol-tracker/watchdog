@@ -45,5 +45,5 @@ jobs:
             core.setOutput('is_outdated', is_outdated);
   update:
     needs: check
-    if: ${{ needs.check.outputs.is_outdated }}
+    if: ${{ needs.check.outputs.is_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
