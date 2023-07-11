@@ -9,6 +9,8 @@ on:
         required: true
       LOL_REGION:
         required: true
+      CONTENT_SSH_PRIVATE_KEY:
+        required: true
 jobs:
   update:
     runs-on: windows-latest

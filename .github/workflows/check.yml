@@ -51,3 +51,4 @@ jobs:
       LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
       LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
       LOL_REGION: ${{ secrets.LOL_REGION }}
+      CONTENT_SSH_PRIVATE_KEY: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
