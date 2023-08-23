@@ -11,141 +11,27 @@ jobs:
     outputs:
       is_outdated: ${{ steps.check.outputs.is_outdated }}
     steps:
+      - name: Checkout watchdog repository
+        uses: actions/checkout@v3
+        with:
+          path: 'watchdog'
       - name: Checkout content repository
         uses: actions/checkout@v3
         with:
           repository: ${{ vars.CONTENT_REPOSITORY }}
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
-      # - name: Prepare environment
-      #   uses: actions/setup-node@v3
+      - name: Install node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
       - name: Install dependencies
-        run: |
-          npm i humanoid-js
-          npm i https://github.com/ryanc16/pe-toolkit.git
-          npm rebuild
+        working-directory: watchdog/watcher
+        run: npm ci
       - name: Check for update
         id: check
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const https = require('https');
-            const os = require('os');
-            const fs = require('fs');
-            const vs = require('vs-version-info');
-            const humanoid = require('humanoid-js');
-            
-            const { spawnSync } = require('child_process');
-            
-            const REGION = 'euw';
-            const PATCHLINE = 'live';
-            const IS_WINDOWS = os.platform() == 'win32';
-            
-            let MANIFEST_DOWNLOADER_URL;
-            let MANIFEST_DOWNLOADER_PATH;
-            if (IS_WINDOWS) {
-                MANIFEST_DOWNLOADER_URL = 'https://github.com/Morilli/ManifestDownloader/releases/download/v1.8.1/ManifestDownloader.exe';
-                MANIFEST_DOWNLOADER_PATH = 'temp/ManifestDownloader.exe';
-            } else {
-                MANIFEST_DOWNLOADER_URL = 'https://github.com/Morilli/ManifestDownloader/releases/download/v1.8.1/ManifestDownloader';
-                MANIFEST_DOWNLOADER_PATH = 'temp/ManifestDownloader';
-            }
-            
-            if (!fs.existsSync('temp')) {
-                fs.mkdirSync('temp');
-            }
-            
-            function fetch_async(url) {
-                return new Promise(async (resolve, reject) => {
-                    let hmnd = new humanoid();
-                    hmnd.get(url)
-                        .then(res => {
-                            try {
-                                return resolve(JSON.parse(res.body));
-                            } catch {
-                                console.error('failed to fetch a resource!');
-                                console.error(res.body);
-                                return reject()
-                            }
-                        })
-                        .catch(err => {
-                            console.error('humanoid error');
-                            console.error(err)
-                            return reject(err)
-                        })
-                });
-            }
-            
-            async function getGameVersion() {
-                const content = await fetch_async('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
-                return content["releases"][0]["compat_version"]["id"];
-            }
-            
-            async function getClientVersion() {
-                const MANIFEST_PATH = 'temp/client.manifest';
-                const CLIENT_PATH = 'LeagueClient.exe'
-            
-                const content = await fetch_async('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
-            
-                function getPatchUrl() {
-                    const configs = content[`keystone.products.league_of_legends.patchlines.${PATCHLINE.toLowerCase()}`]['platforms']['win']['configurations'];
-                    const region = REGION.toUpperCase();
-                    
-                    for (const config of configs) {
-                        if (config['id'] == region) {
-                            return config['patch_url'];
-                        }
-                    }
-            
-                    return undefined;
-                }
-                const patchUrl = getPatchUrl();
-            
-                function downloadToFile(url, path) {
-                    return new Promise((resolve, reject) => {
-                        https.get(url, response => {
-                            // redirection
-                            if (response.statusCode > 300 && response.statusCode < 400 && !!response.headers.location) {
-                                return resolve(downloadToFile(response.headers.location, path));
-                            }
-                            
-                            if (response.statusCode != 200) {
-                                return reject(new Error(response.statusMessage));
-                            }
-                
-                            const stream = fs.createWriteStream(path).on('finish', () => {
-                                resolve({});
-                            })
-                
-                            response.pipe(stream);
-                        }).on('error', error => {
-                            reject(error);
-                        });
-                    });
-                }
-                await downloadToFile(patchUrl, MANIFEST_PATH);
-            
-                await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
-                if (!IS_WINDOWS) {
-                    fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
-                }
-
-                spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
-            
-                const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
-                const versionInfo = vs.parseBytes(buffer)[0];
-                const entry = versionInfo.getStringTables()[0];
-            
-                return entry['FileVersion'];
-            }
-            
-            (async () => {
-                console.log('game version:   ' + await getGameVersion());
-                console.log('client version: ' + await getClientVersion());
-            })()
-
-            let is_outdated = false;
-            core.setOutput('is_outdated', is_outdated);
+        working-directory: watchdog/watcher
+        run: npm run start
   update:
     needs: check
     if: ${{ needs.check.outputs.is_outdated == 'true' }}

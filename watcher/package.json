@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "humanoid-js": "^1.0.1",
+    "node-fetch": "^3.3.2",
+    "vs-version-info": "github:ryanc16/pe-toolkit"
+  }
+}
