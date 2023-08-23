@@ -21,14 +21,12 @@ jobs:
       #   uses: actions/setup-node@v3
       - name: Install dependencies
         run: |
-          npm i node-fetch
           npm i https://github.com/ryanc16/pe-toolkit.git
       - name: Check for update
         id: check
         uses: actions/github-script@v6
         with:
           script: |
-            const node_fetch = require('node-fetch');
             const https = require('https');
             const fs = require('fs');
             const vs = require('vs-version-info');
@@ -43,7 +41,7 @@ jobs:
             }
             
             async function getGameVersion() {
-                const response = await node_fetch('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
+                const response = await fetch('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
                 const content = await response.json();
             
                 return content["releases"][0]["compat_version"]["id"];
@@ -53,7 +51,8 @@ jobs:
                 const MANIFEST_PATH = 'temp/client.manifest';
                 const CLIENT_PATH = 'LeagueClient.exe'
             
-                const response = await node_fetch('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
+                const response = await fetch('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
+                console.log(await response.text());
                 const content = await response.json();
             
                 function getPatchUrl() {
