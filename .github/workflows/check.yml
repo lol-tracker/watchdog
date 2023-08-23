@@ -47,7 +47,7 @@ jobs:
                         const content = await response.text();
                 
                         try {
-                            return JSON.parse(content);
+                            return resolve(JSON.parse(content));
                         } catch {
                             console.log(`failed to fetch a resource! retries left: ${5 - i}`);
                             console.log(content);
