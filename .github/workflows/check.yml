@@ -121,6 +121,10 @@ jobs:
                 await downloadToFile(patchUrl, MANIFEST_PATH);
             
                 await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
+                if (!IS_WINDOWS) {
+                    fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
+                }
+                
                 spawn(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
             
                 const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
