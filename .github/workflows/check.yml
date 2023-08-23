@@ -119,6 +119,8 @@ jobs:
 
             let is_outdated = false;
             core.setOutput('is_outdated', is_outdated);
+
+            console.log('done done done');
   update:
     needs: check
     if: ${{ needs.check.outputs.is_outdated == 'true' }}
