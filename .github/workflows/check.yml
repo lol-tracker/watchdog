@@ -17,17 +17,16 @@ jobs:
           repository: ${{ vars.CONTENT_REPOSITORY }}
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
-      - name: Prepare environment
-        uses: actions/setup-node@v3
-      - run: |
-          npm i -g node-fetch
+      # - name: Prepare environment
+      #   uses: actions/setup-node@v3
+      - name: Install dependencies
+        run: |
           npm i -g https://github.com/ryanc16/pe-toolkit.git
       - name: Check for update
         id: check
         uses: actions/github-script@v6
         with:
           script: |
-            const fetch = require('node-fetch');
             const https = require('https');
             const fs = require('fs');
             const vs = require('vs-version-info');
