@@ -7,41 +7,100 @@ on:
 
 jobs:
   check:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     outputs:
       is_outdated: ${{ steps.check.outputs.is_outdated }}
     steps:
-      - name: Setup the League Client
-        id: league-client
-        uses: lol-tracker/setup-league-client@latest
+      - name: Checkout content repository
+        uses: actions/checkout@v3
         with:
-          username: ${{ secrets.LOL_USERNAME }}
-          password: ${{ secrets.LOL_PASSWORD }}
-          region: ${{ secrets.LOL_REGION }}
-      # - name: Checkout content repository
-      #   uses: actions/checkout@v3
-      #   with:
-      #     repository: 'lol-tracker/content'
-      #     ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
-      #     path: 'content'
+          repository: ${{ vars.CONTENT_REPOSITORY }}
+          ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+          path: 'content'
+      - name: Prepare environment
+        uses: actions/setup-node@v3
+      - run: |
+          npm i -g node-fetch
+          npm i -g https://github.com/ryanc16/pe-toolkit.git
       - name: Check for update
         id: check
         uses: actions/github-script@v6
         with:
           script: |
-            const https = require('https');
+            import fetch from 'node-fetch';
+            import https from 'https'
+            import fs from 'fs';
+            import vs from 'vs-version-info';
+            
+            import { spawn } from 'child_process';
+            
+            const REGION = 'euw';
+            const PATCHLINE = 'live';
+            
+            if (!fs.existsSync('temp')) {
+                fs.mkdirSync('temp');
+            }
+            
+            async function getGameVersion() {
+                const response = await fetch('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
+                const content = await response.json();
+            
+                return content["releases"][0]["compat_version"]["id"];
+            }
+            
+            async function getClientVersion() {
+                const MANIFEST_PATH = 'temp/client.manifest';
+                const CLIENT_PATH = 'LeagueClient.exe'
+            
+                const response = await fetch('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
+                const content = await response.json();
+            
+                function getPatchUrl() {
+                    const configs = content[`keystone.products.league_of_legends.patchlines.${PATCHLINE.toLowerCase()}`]['platforms']['win']['configurations'];
+                    const region = REGION.toUpperCase();
+                    
+                    for (const config of configs) {
+                        if (config['id'] == region) {
+                            return config['patch_url'];
+                        }
+                    }
+            
+                    return undefined;
+                }
+                const patchUrl = getPatchUrl();
+            
+                function downloadToFile(url, path) {
+                    return new Promise((resolve, reject) => {
+                        https.get(url, response => {
+                            if (response.statusCode != 200) {
+                                return reject(new Error(response.statusMessage));
+                            }
+            
+                            const stream = fs.createWriteStream(path).on('finish', () => {
+                                resolve({});
+                            })
+            
+                            response.pipe(stream);
+                        }).on('error', error => {
+                            reject(error);
+                        });
+                    });
+                }
+                await downloadToFile(patchUrl, MANIFEST_PATH);
+            
+                spawn('bins/ManifestDownloader.exe', [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
+            
+                const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
+                const versionInfo = vs.parseBytes(buffer)[0];
+                const entry = versionInfo.getStringTables()[0];
+            
+                return entry['FileVersion'];
+            }
+            
+            console.log('game version:   ' + await getGameVersion());
+            console.log('client version: ' + await getClientVersion());
 
-            const lol_ver = await (await fetch('https://127.0.0.1:${{ steps.league-client.outputs.lcu-port }}/lol-patch/v1/game-version', {
-              headers: { 'Authorization': 'Basic ' + btoa('riot:${{ steps.league-client.outputs.lcu-password }}') },
-              agent: new https.Agent({
-                rejectUnauthorized: false,
-              }),
-            })).text();
-            const local_ver = await (await fetch('https://raw.githubusercontent.com/lol-tracker/content/main/lol/version.txt')).text();
-            const is_outdated = lol_ver != local_ver
-            console.log(`lol_ver: ${lol_ver}`);
-            console.log(`local_ver: ${local_ver}`);
-            console.log(`is_outdated: ${is_outdated}`);
+            let is_outdated = false;
             core.setOutput('is_outdated', is_outdated);
   update:
     needs: check
