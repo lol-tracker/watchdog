@@ -21,6 +21,7 @@ jobs:
       #   uses: actions/setup-node@v3
       - name: Install dependencies
         run: |
+          npm i node-fetch
           npm i https://github.com/ryanc16/pe-toolkit.git
       - name: Check for update
         id: check
