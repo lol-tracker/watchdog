@@ -23,6 +23,7 @@ jobs:
         run: |
           npm i humanoid-js
           npm i https://github.com/ryanc16/pe-toolkit.git
+          npm rebuild
       - name: Check for update
         id: check
         uses: actions/github-script@v6
