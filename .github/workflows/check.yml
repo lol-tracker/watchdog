@@ -22,6 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm i -g https://github.com/ryanc16/pe-toolkit.git
+          export NODE_PATH=$(npm root -g)
       - name: Check for update
         id: check
         uses: actions/github-script@v6
