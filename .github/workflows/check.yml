@@ -32,8 +32,9 @@ jobs:
             const os = require('os');
             const fs = require('fs');
             const vs = require('vs-version-info');
+            const humanoid = require('humanoid-js');
             
-            const { spawn } = require('child_process');
+            const { spawnSync } = require('child_process');
             
             const REGION = 'euw';
             const PATCHLINE = 'live';
