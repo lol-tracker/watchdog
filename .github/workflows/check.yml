@@ -27,12 +27,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            import fetch from 'node-fetch';
-            import https from 'https'
-            import fs from 'fs';
-            import vs from 'vs-version-info';
+            const fetch = require('node-fetch');
+            const https = require('https');
+            const fs = require('fs');
+            const vs = require('vs-version-info');
             
-            import { spawn } from 'child_process';
+            const { spawn } = require('child_process');
             
             const REGION = 'euw';
             const PATCHLINE = 'live';
