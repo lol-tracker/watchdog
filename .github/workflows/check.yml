@@ -54,20 +54,22 @@ jobs:
             
             function fetch_async(url) {
                 return new Promise(async (resolve, reject) => {
-                    for (let i = 0; i < 5; ++i) {
-                        const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-                        const content = await response.text();
-            
-                        try {
-                            return resolve(JSON.parse(content));
-                        } catch {
-                            console.log(`failed to fetch a resource! retries left: ${5 - i - 1}`);
-                            console.log(content);
-                            await new Promise(r => setTimeout(r, 3000));
-                        }
-                    }
-                
-                    reject();
+                    let hmnd = new humanoid();
+                    hmnd.get(url)
+                        .then(res => {
+                            try {
+                                return resolve(JSON.parse(res.body));
+                            } catch {
+                                console.error('failed to fetch a resource!');
+                                console.error(res.body);
+                                return reject()
+                            }
+                        })
+                        .catch(err => {
+                            console.error('humanoid error');
+                            console.error(err)
+                            return reject(err)
+                        })
                 });
             }
             
@@ -124,8 +126,8 @@ jobs:
                 if (!IS_WINDOWS) {
                     fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
                 }
-                
-                spawn(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
+
+                spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
             
                 const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
                 const versionInfo = vs.parseBytes(buffer)[0];
