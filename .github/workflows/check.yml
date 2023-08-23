@@ -48,7 +48,8 @@ jobs:
                         try {
                             return resolve(await response.json());
                         } catch {
-                            console.log(`failed to fetch a resource! retries left: ${5 - i}`)
+                            console.log(`failed to fetch a resource! retries left: ${5 - i}`);
+                            console.log(await response.text());
                             await new Promise(r => setTimeout(r, 3000));
                         }
                     }
