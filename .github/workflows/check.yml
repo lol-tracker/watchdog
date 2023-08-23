@@ -44,12 +44,13 @@ jobs:
                 return new Promise(async (resolve, reject) => {
                     for (let i = 0; i < 5; ++i) {
                         const response = await fetch(url);
+                        const content = await response.text();
                 
                         try {
-                            return resolve(await response.json());
+                            return JSON.parse(content);
                         } catch {
                             console.log(`failed to fetch a resource! retries left: ${5 - i}`);
-                            console.log(await response.text());
+                            console.log(content);
                             await new Promise(r => setTimeout(r, 3000));
                         }
                     }
