@@ -82,13 +82,20 @@ Create-Folder 'lol'
 
 Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile 'rcs/swagger.json'
 Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile 'rcs/openapi.json'
+
 Invoke-RCSRequest '/product-metadata/v2/products' -OutFile 'rcs/products.json'
 
 Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile 'lol/swagger.json'
 Invoke-LOLRequest '/swagger/v3/openapi.json' -OutFile 'lol/openapi.json'
-Invoke-LOLRequest '/lol-patch/v1/game-version' -OutFile 'lol/version.txt'
+
 Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile 'lol/maps.json'
 Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile 'lol/queues.json'
 Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile 'lol/catalog.json'
+
+$versionObject = @{}
+$versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds').version)
+$versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version').TrimStart('"').TrimEnd('"'))
+
+$jsonRepresentation | ConvertTo-Json | Out-File "version.txt"
 
 Write-Host 'Success!'
