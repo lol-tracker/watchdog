@@ -3,11 +3,9 @@ on:
   workflow_dispatch:
   workflow_call:
     secrets:
-      FILE_CLIENT_SETTINGS_CONTENT:
+      LOL_USERNAME:
         required: true
-      FILE_PRIVATE_SETTINGS_CONTENT:
-        required: true
-      FILE_COOKIES_CONTENT:
+      LOL_PASSWORD:
         required: true
       LOL_REGION:
         required: true
@@ -21,9 +19,8 @@ jobs:
         id: league-client
         uses: lol-tracker/setup-league-client@latest
         with:
-          file_client_settings_data: ${{ secrets.FILE_CLIENT_SETTINGS_CONTENT }}
-          file_private_settings_data: ${{ secrets.FILE_PRIVATE_SETTINGS_CONTENT }}
-          file_cookies_data: ${{ secrets.FILE_COOKIES_CONTENT }}
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
           region: ${{ secrets.LOL_REGION }}
       - name: Checkout watchdog repository
         uses: actions/checkout@v3
