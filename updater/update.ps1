@@ -28,8 +28,23 @@ function Invoke-RiotRequest {
                 -Authentication 'Basic' `
                 -Credential $cred `
                 -ContentType 'application/json' `
-                -Body $($body | ConvertTo-Json) `
-                -OutFile $OutFile
+                -Body $($body | ConvertTo-Json)
+
+            if (![string]::IsNullOrEmpty($OutFile)) {
+                # We need this dirty code to properly format json when outputting
+
+                if ($result -is [string] ||
+                    $result -is [number]) {
+                    Out-File $OutFile $result
+                }
+                else
+                {
+                    ConvertTo-Json $result -Depth 100 | Out-File $OutFile
+                }
+
+                return $null
+            }
+            
             return $result
         } Catch {
             $attempts--
@@ -94,6 +109,6 @@ $versionObject = @{}
 $versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds').version)
 $versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version').TrimStart('"').TrimEnd('"'))
 
-$versionObject | ConvertTo-Json | Out-File "lol/version.txt"
+ConvertTo-Json $versionObject | Out-File "lol/version.txt"
 
 Write-Host 'Success!'
