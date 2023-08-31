@@ -126,12 +126,12 @@ async function getClientVersion() {
     return entry['FileVersion'];
 }
 
-const lastGameVersion = await getGameVersion();
-const lastClientVersion = await getClientVersion();
+const currentGameVersion = await getGameVersion();
+const currentClientVersion = await getClientVersion();
 
-const version = fs.readFileSync('../../content/lol/version.txt').toJSON();
-const currentGameVersion  = version.game;
-const currentClientVersion = version.client;
+const version = JSON.parse(fs.readFileSync('../../content/lol/version.txt'));
+const lastGameVersion  = version.game;
+const lastClientVersion = version.client;
 
 console.log('game version:  ');
 console.log('         old:  ' + lastGameVersion);
