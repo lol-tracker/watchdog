@@ -45,11 +45,10 @@ jobs:
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
       - name: Commit and push new content
         working-directory: content
-        # TODO: Proper commit name
-        # $(cat lol/version.txt | cut -d "\"" -f 2)
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
           git config --global user.name "lol-tracker-bot"
           git add .
-          git commit -m "Updated to version TBD"
+          $ver = (Get-Content 'lol/version.txt' | ConvertFrom-Json).client
+          git commit -m "Updated to version $ver"
           git push

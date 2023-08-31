@@ -126,8 +126,19 @@ async function getClientVersion() {
     return entry['FileVersion'];
 }
 
-console.log('game version:   ' + await getGameVersion());
-console.log('client version: ' + await getClientVersion());
+const lastGameVersion = await getGameVersion();
+const lastClientVersion = await getClientVersion();
 
-let is_outdated = false;
+const version = fs.readFileSync('../../content/lol/version.txt').toJSON();
+const currentGameVersion  = version.game;
+const currentClientVersion = version.client;
+
+console.log('game version:  ');
+console.log('         old:  ' + lastGameVersion);
+console.log('         new:  ' + currentGameVersion);
+console.log('client version:');
+console.log('          old: ' + lastClientVersion);
+console.log('          new: ' + currentClientVersion);
+
+let is_outdated = currentGameVersion != lastGameVersion || currentClientVersion != lastClientVersion;
 core.setOutput('is_outdated', is_outdated);

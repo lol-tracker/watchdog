@@ -1,11 +1,9 @@
 #requires -PSEdition Core
 
 $RCS_PWD = $env:RCS_PASSWORD
-$RCS_DIR = $env:RCS_DIR
 $RCS_PORT = $env:RCS_PORT
 
 $LOL_PWD = $env:LCU_PASSWORD
-$LOL_DIR = $env:LCU_DIR
 $LOL_PORT = $env:LCU_PORT
 
 function Invoke-RiotRequest {
@@ -96,6 +94,6 @@ $versionObject = @{}
 $versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds').version)
 $versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version').TrimStart('"').TrimEnd('"'))
 
-$jsonRepresentation | ConvertTo-Json | Out-File "version.txt"
+$versionObject | ConvertTo-Json | Out-File "lol/version.txt"
 
 Write-Host 'Success!'
