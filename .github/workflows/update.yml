@@ -11,6 +11,12 @@ on:
         required: true
       CONTENT_SSH_PRIVATE_KEY:
         required: true
+    inputs:
+      push-update:
+        description: 'Should we push update to github?'
+        required: false
+        default: true
+        type: boolean
 jobs:
   update:
     runs-on: windows-latest
