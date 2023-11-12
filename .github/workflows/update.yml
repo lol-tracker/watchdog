@@ -50,6 +50,7 @@ jobs:
           LCU_PASSWORD: ${{ steps.league-client.outputs.lcu-password }}
           LCU_PORT: ${{ steps.league-client.outputs.lcu-port }}
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
+          PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
         working-directory: content
         run: |
