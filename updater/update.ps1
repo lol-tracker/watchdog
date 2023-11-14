@@ -93,6 +93,18 @@ function Create-Folder {
     Return New-Item -Name $name -ItemType Directory -Force
 }
 
+function Clean-Folder {
+	Param (
+		[Parameter(Mandatory=$true)] [String]$name
+	)
+
+	if (Test-Path($name)) {
+		return Get-ChildItem -Path $name -Include * -File -Recurse | foreach { $_.Delete()}
+	} else {
+		return Create-Folder $name
+	}
+}
+
 Create-Folder 'rcs'
 Create-Folder 'lol'
 
@@ -136,7 +148,8 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status")) {
 }
 
 Write-Host 'Copying plugin output to content folder...'
-Copy-Item -Force -Recurse -Verbose "$PENGU_DIR\plugins\updater-pengu\output" -Destination .\plugins\
+Clean-Folder .\plugins\
+Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR\plugins\updater-pengu\output\*" -Destination .\plugins\
 
 Write-Host 'Installing js beautifier...'
 npm i -g js-beautify
