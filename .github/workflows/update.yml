@@ -30,11 +30,11 @@ jobs:
           region: ${{ secrets.LOL_REGION }}
           install-pengu: true
       - name: Checkout watchdog repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'watchdog'
       - name: Checkout content repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
