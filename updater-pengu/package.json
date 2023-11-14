@@ -1,0 +1,21 @@
+{
+  "name": "updater-pengu",
+  "description": "TBD",
+  "private": true,
+  "version": "1.0.0",
+  "license": "WTFPL",
+  "type": "module",
+  "config": {
+    "loaderPath": "C:/Users/user3/AppData/Local/Programs/Pengu Loader/"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.7",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.8",
+    "vite-plugin-mkcert": "^1.16.0"
+  }
+}

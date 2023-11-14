@@ -1,6 +1,12 @@
 name: Update the content
 on:
   workflow_dispatch:
+    inputs:
+      push_update:
+        description: 'Should we push update to github?'
+        required: false
+        default: true
+        type: boolean
   workflow_call:
     secrets:
       LOL_USERNAME:
@@ -22,12 +28,13 @@ jobs:
           username: ${{ secrets.LOL_USERNAME }}
           password: ${{ secrets.LOL_PASSWORD }}
           region: ${{ secrets.LOL_REGION }}
+          install-pengu: true
       - name: Checkout watchdog repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'watchdog'
       - name: Checkout content repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
@@ -43,7 +50,9 @@ jobs:
           LCU_PASSWORD: ${{ steps.league-client.outputs.lcu-password }}
           LCU_PORT: ${{ steps.league-client.outputs.lcu-port }}
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
+          PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
+        if: ${{ github.event_name == 'workflow_call' || inputs.push_update }}
         working-directory: content
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
