@@ -21,14 +21,6 @@ jobs:
   update:
     runs-on: windows-latest
     steps:
-      - name: Setup the League Client
-        id: league-client
-        uses: lol-tracker/setup-league-client@latest
-        with:
-          username: ${{ secrets.LOL_USERNAME }}
-          password: ${{ secrets.LOL_PASSWORD }}
-          region: ${{ secrets.LOL_REGION }}
-          install-pengu: true
       - name: Checkout watchdog repository
         uses: actions/checkout@v4
         with:
@@ -39,6 +31,14 @@ jobs:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
+      - name: Setup the League Client
+        id: league-client
+        uses: lol-tracker/setup-league-client@latest
+        with:
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
+          region: ${{ secrets.LOL_REGION }}
+          install-pengu: true
       - name: Parse the content
         shell: pwsh
         working-directory: content
@@ -52,7 +52,7 @@ jobs:
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
           PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
-        if: ${{ github.event_name == 'workflow_call' || inputs.push_update }}
+        if: ${{ github.event_name == 'workflow_call' || github.event.inputs.push_update == 'true' }}
         working-directory: content
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
