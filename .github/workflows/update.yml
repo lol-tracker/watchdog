@@ -52,7 +52,7 @@ jobs:
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
           PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
-        if: ${{ github.event_name == 'workflow_call' || inputs.push_update }}
+        if: ${{ github.event_name == 'workflow_call' || github.event.inputs.push_update }}
         working-directory: content
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
