@@ -44,23 +44,6 @@ function fetch_async(url) {
                 return reject(err)
             })
     });
-
-    // return new Promise(async (resolve, reject) => {
-    //     for (let i = 0; i < 5; ++i) {
-    //         const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-    //         const content = await response.text();
-
-    //         try {
-    //             return resolve(JSON.parse(content));
-    //         } catch {
-    //             console.log(`failed to fetch a resource! retries left: ${5 - i - 1}`);
-    //             console.log(content);
-    //             await new Promise(r => setTimeout(r, 3000));
-    //         }
-    //     }
-    
-    //     reject();
-    // });
 }
 
 async function getGameVersion() {
