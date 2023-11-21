@@ -7,7 +7,7 @@ import core from '@actions/core';
 
 import { spawnSync } from 'child_process';
 
-const REGION = 'euw';
+const REGION = process.env.LOL_REGION.toLowerCase();
 const PATCHLINE = 'live';
 const IS_WINDOWS = os.platform() == 'win32';
 

@@ -31,6 +31,8 @@ jobs:
       - name: Check for update
         id: check
         working-directory: watchdog/watcher
+        env:
+          LOL_REGION: ${{ secrets.LOL_REGION }}
         run: npm run start
   update:
     needs: check
