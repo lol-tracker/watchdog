@@ -134,7 +134,7 @@ Write-Host 'Copying pengu plugin...'
 New-Item -Path "$PENGU_DIR/plugins/updater-pengu" -ItemType Directory -Force
 Copy-Item ..\watchdog\updater-pengu\dist\index.js "$PENGU_DIR/plugins/updater-pengu/index.js"
 
-$attempts = 3
+$attempts = 5
 while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/log.txt") -And $attempts -Gt 0) {
 	Write-Host "Restarting LOL UX... Attempts left: $attempts"
 	Invoke-LOLRequest '/riotclient/kill-and-restart-ux' 'POST'
