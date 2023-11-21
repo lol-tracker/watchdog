@@ -47,7 +47,7 @@ function fetch_async(url) {
 }
 
 async function getGameVersion() {
-    const content = await fetch_async('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
+    const content = await fetch_async(`https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/${REGION}?q[platform]=windows&q[published]=true`);
     return content["releases"][0]["compat_version"]["id"];
 }
 
