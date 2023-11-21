@@ -1,12 +1,22 @@
+function log(text: string) {
+	PluginFS.write('log.txt', text + '\n', true)
+}
+
+log('window loaded')
+
 export async function init(context: PenguContext) {
+	log('init called')
+
 	context.rcp.preInit('rcp-fe-common-libs', async (provider) => {
 		(window as any).__RCP_COMMON_PROVIDER = provider
+
+		log('common-libs preInit')
 
 		// Make sure 'output' folder exists
 		await PluginFS.mkdir('output/')
 
 		let plugins = await (await fetch('/plugin-manager/v2/plugins')).json()
-		// console.log(plugins)
+		log(`Total plugins: ${plugins.length}`)
 
 		let promises: Promise<any>[] = []
 
@@ -19,7 +29,7 @@ export async function init(context: PenguContext) {
 			promises.push(new Promise<any>((resolve, reject) => {
 				let shortName = name.replace(/^rcp-fe-/, '')
 
-				console.log(`Dumping ${shortName}...`)
+				log(`Dumping ${shortName}...`)
 				fetch(`/fe/${shortName}/${name}.js`).then(response => {
 					if (!response.ok) {
 						console.error(`Error fetching ${shortName}!`)
@@ -29,7 +39,7 @@ export async function init(context: PenguContext) {
 					}
 
 					response.text().then(text => {
-						console.log(`Saving ${shortName}...`)
+						log(`Saving ${shortName}...`)
 
 						PluginFS.write(`output/${shortName}.js`, text, false).then(status => {
 							if (status != true) {
@@ -38,7 +48,7 @@ export async function init(context: PenguContext) {
 								return
 							}
 
-							console.log(`Successfully dumped and saved ${shortName}!`)
+							log(`Successfully dumped and saved ${shortName}!`)
 							resolve(null)
 						})
 					})

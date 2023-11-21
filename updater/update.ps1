@@ -134,17 +134,35 @@ Write-Host 'Copying pengu plugin...'
 New-Item -Path "$PENGU_DIR/plugins/updater-pengu" -ItemType Directory -Force
 Copy-Item ..\watchdog\updater-pengu\dist\index.js "$PENGU_DIR/plugins/updater-pengu/index.js"
 
-Write-Host 'Restarting LOL UX...'
-Invoke-LOLRequest '/riotclient/kill-and-restart-ux' 'POST'
+$attempts = 3
+while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/log.txt") -And $attempts -Gt 0) {
+	Write-Host "Restarting LOL UX... Attempts left: $attempts"
+	Invoke-LOLRequest '/riotclient/kill-and-restart-ux' 'POST'
+	
+	Start-Sleep 10
+	$attempts--
+
+	if ($attempts -Eq 0) {
+		Write-Output '::error Failed to install pengu plugin!'
+		Exit
+	}
+}
 
 # Wait until pengu dumper is done...
 Write-Host 'Dumping plugins...'
 $attempts = 100
-while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status")) {
+while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status") -And $attempts -Gt 0) {
 	Start-Sleep 1
 
 	$attempts--
 	Write-Host "Attempts left: $attempts"
+
+	if ($attempts -Eq 0) {
+		Write-Output '::error Failed to dump plugins!'
+		Write-Host 'Log output:'
+		Get-Content "$PENGU_DIR/plugins/updater-pengu/log.txt"
+		Exit
+	}
 }
 
 Write-Host 'Copying plugin output to content folder...'

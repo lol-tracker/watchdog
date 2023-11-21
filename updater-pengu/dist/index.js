@@ -1,33 +1,40 @@
-async function g(r) {
-  r.rcp.preInit("rcp-fe-common-libs", async (i) => {
-    window.__RCP_COMMON_PROVIDER = i, await PluginFS.mkdir("output/");
-    let s = await (await fetch("/plugin-manager/v2/plugins")).json(), n = [];
-    for (let u of s) {
-      let l = u.fullName;
-      l.startsWith("rcp-fe-") && n.push(new Promise((a, o) => {
-        let e = l.replace(/^rcp-fe-/, "");
-        console.log(`Dumping ${e}...`), fetch(`/fe/${e}/${l}.js`).then((t) => {
-          if (!t.ok) {
-            console.error(`Error fetching ${e}!`), console.error(`${t.status}: ${t.statusText}`), o(null);
+function e(l) {
+  PluginFS.write("log.txt", l + `
+`, !0);
+}
+e("window loaded");
+async function p(l) {
+  e("init called"), l.rcp.preInit("rcp-fe-common-libs", async (a) => {
+    window.__RCP_COMMON_PROVIDER = a, e("common-libs preInit"), await PluginFS.mkdir("output/");
+    let r = await (await fetch("/plugin-manager/v2/plugins")).json();
+    e(`Total plugins: ${r.length}`);
+    let o = [];
+    for (let s of r) {
+      let i = s.fullName;
+      i.startsWith("rcp-fe-") && o.push(new Promise((c, u) => {
+        let t = i.replace(/^rcp-fe-/, "");
+        e(`Dumping ${t}...`), fetch(`/fe/${t}/${i}.js`).then((n) => {
+          if (!n.ok) {
+            console.error(`Error fetching ${t}!`), console.error(`${n.status}: ${n.statusText}`), u(null);
             return;
           }
-          t.text().then((c) => {
-            console.log(`Saving ${e}...`), PluginFS.write(`output/${e}.js`, c, !1).then((f) => {
-              if (f != !0) {
-                console.error(`Error saving ${e}!`), o(null);
+          n.text().then((f) => {
+            e(`Saving ${t}...`), PluginFS.write(`output/${t}.js`, f, !1).then((g) => {
+              if (g != !0) {
+                console.error(`Error saving ${t}!`), u(null);
                 return;
               }
-              console.log(`Successfully dumped and saved ${e}!`), a(null);
+              e(`Successfully dumped and saved ${t}!`), c(null);
             });
           });
         });
       }));
     }
-    Promise.allSettled(n).then(() => {
+    Promise.allSettled(o).then(() => {
       PluginFS.write("status", "1", !1);
     });
   });
 }
 export {
-  g as init
+  p as init
 };
