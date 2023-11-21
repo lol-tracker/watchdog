@@ -21,14 +21,6 @@ jobs:
   update:
     runs-on: windows-latest
     steps:
-      - name: Setup the League Client
-        id: league-client
-        uses: lol-tracker/setup-league-client@latest
-        with:
-          username: ${{ secrets.LOL_USERNAME }}
-          password: ${{ secrets.LOL_PASSWORD }}
-          region: ${{ secrets.LOL_REGION }}
-          install-pengu: true
       - name: Checkout watchdog repository
         uses: actions/checkout@v4
         with:
@@ -39,6 +31,14 @@ jobs:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
+      - name: Setup the League Client
+        id: league-client
+        uses: lol-tracker/setup-league-client@latest
+        with:
+          username: ${{ secrets.LOL_USERNAME }}
+          password: ${{ secrets.LOL_PASSWORD }}
+          region: ${{ secrets.LOL_REGION }}
+          install-pengu: true
       - name: Parse the content
         shell: pwsh
         working-directory: content
