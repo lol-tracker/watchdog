@@ -8,15 +8,24 @@ on:
         default: true
         type: boolean
   workflow_call:
-    secrets:
+    inputs:
       LOL_USERNAME:
         required: true
+        type: string
       LOL_PASSWORD:
         required: true
+        type: string
       LOL_REGION:
         required: true
-      CONTENT_SSH_PRIVATE_KEY:
-        required: true
+        type: string
+      LOL_PATCHLINE:
+        required: false
+        default: 'live'
+        type: string
+      LOL_CONFIG:
+        required: false
+        default: ''
+        type: string
 jobs:
   update:
     runs-on: windows-latest
@@ -31,13 +40,19 @@ jobs:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           path: 'content'
+      - name: Change content branch
+        if: ${{ github.ref_name != 'main' }}
+        path: 'content'
+        run: git switch -C ${{ github.ref_name }}
       - name: Setup the League Client
         id: league-client
         uses: lol-tracker/setup-league-client@latest
         with:
-          username: ${{ secrets.LOL_USERNAME }}
-          password: ${{ secrets.LOL_PASSWORD }}
-          region: ${{ secrets.LOL_REGION }}
+          username: ${{ github.event_name == 'workflow_call' && inputs.LOL_USERNAME || secrets.LOL_USERNAME }}
+          password: ${{ github.event_name == 'workflow_call' && inputs.LOL_PASSWORD || secrets.LOL_PASSWORD }}
+          region: ${{ github.event_name == 'workflow_call' && inputs.LOL_REGION || secrets.LOL_REGION }}
+          patchline: ${{ github.event_name == 'workflow_call' && inputs.LOL_PATCHLINE || 'live' }}
+          config: ${{ github.event_name == 'workflow_call' && inputs.LOL_CONFIG || '' }}
           install-pengu: true
       - name: Parse the content
         shell: pwsh

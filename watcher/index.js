@@ -7,8 +7,7 @@ import core from '@actions/core';
 
 import { spawnSync } from 'child_process';
 
-const REGION = process.env.LOL_REGION.toLowerCase();
-const PATCHLINE = 'live';
+const REGION = process.env.LOL_REGION;
 const IS_WINDOWS = os.platform() == 'win32';
 
 let MANIFEST_DOWNLOADER_URL;
@@ -46,21 +45,48 @@ function fetch_async(url) {
     });
 }
 
-async function getGameVersion() {
-    const content = await fetch_async(`https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/${REGION}?q[platform]=windows&q[published]=true`);
+function downloadToFile(url, path) {
+	return new Promise((resolve, reject) => {
+		https.get(url, response => {
+			// redirection
+			if (response.statusCode > 300 && response.statusCode < 400 && !!response.headers.location) {
+				return resolve(downloadToFile(response.headers.location, path));
+			}
+
+			if (response.statusCode != 200) {
+				return reject(new Error(response.statusMessage));
+			}
+
+			const stream = fs.createWriteStream(path).on('finish', () => {
+				resolve({});
+			})
+
+			response.pipe(stream);
+		}).on('error', error => {
+			reject(error);
+		});
+	});
+}
+
+async function getGameVersion(region) {
+    const content = await fetch_async(`https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/${region.toUpperCase()}?q[platform]=windows&q[published]=true`);
     return content["releases"][0]["compat_version"]["id"];
 }
 
-async function getClientVersion() {
+async function getClientVersion(region, patchline) {
     const MANIFEST_PATH = 'temp/client.manifest';
     const CLIENT_PATH = 'LeagueClient.exe'
 
     const content = await fetch_async('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
 
     function getPatchUrl() {
-        const configs = content[`keystone.products.league_of_legends.patchlines.${PATCHLINE.toLowerCase()}`]['platforms']['win']['configurations'];
-        const region = REGION.toUpperCase();
+        const configs = content[`keystone.products.league_of_legends.patchlines.${patchline.toLowerCase()}`]['platforms']['win']['configurations'];
+
+		if (configs.length == 1) {
+			return configs[0]['patch_url'];
+		}
         
+        region = region.toUpperCase();
         for (const config of configs) {
             if (config['id'] == region) {
                 return config['patch_url'];
@@ -71,34 +97,7 @@ async function getClientVersion() {
     }
     const patchUrl = getPatchUrl();
 
-    function downloadToFile(url, path) {
-        return new Promise((resolve, reject) => {
-            https.get(url, response => {
-                // redirection
-                if (response.statusCode > 300 && response.statusCode < 400 && !!response.headers.location) {
-                    return resolve(downloadToFile(response.headers.location, path));
-                }
-                
-                if (response.statusCode != 200) {
-                    return reject(new Error(response.statusMessage));
-                }
-    
-                const stream = fs.createWriteStream(path).on('finish', () => {
-                    resolve({});
-                })
-    
-                response.pipe(stream);
-            }).on('error', error => {
-                reject(error);
-            });
-        });
-    }
     await downloadToFile(patchUrl, MANIFEST_PATH);
-
-    await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
-    if (!IS_WINDOWS) {
-        fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
-    }
 
     spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
 
@@ -109,19 +108,61 @@ async function getClientVersion() {
     return entry['FileVersion'];
 }
 
-const currentGameVersion = await getGameVersion();
-const currentClientVersion = await getClientVersion();
+if (!fs.existsSync(MANIFEST_DOWNLOADER_PATH)) {
+	await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
+	if (!IS_WINDOWS) {
+		fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
+	}
+}
 
-const version = JSON.parse(fs.readFileSync('../../content/lol/version.txt'));
-const lastGameVersion  = version.game;
-const lastClientVersion = version.client;
+let configs = [
+	{
+		region: REGION,
+		patchline: 'LIVE',
+	},
+	{
+		region: 'PBE1',
+		patchline: 'PBE',
+	}
+]
 
-console.log('game version:  ');
-console.log('         old:  ' + lastGameVersion);
-console.log('         new:  ' + currentGameVersion);
-console.log('client version:');
-console.log('          old: ' + lastClientVersion);
-console.log('          new: ' + currentClientVersion);
+let versions = []
+let tasks = [];
+for (const cfg of configs) {
+	versions[cfg.patchline] = {}
 
-let is_outdated = currentGameVersion != lastGameVersion || currentClientVersion != lastClientVersion;
-core.setOutput('is_outdated', is_outdated);
+	tasks.push(
+		getGameVersion(cfg.region).then((result) => {
+			versions[cfg.patchline].game = result;
+		}),
+		getClientVersion(cfg.region, cfg.patchline).then((result) => {
+			versions[cfg.patchline].client = result;
+		})
+	)
+}
+
+await Promise.all(tasks);
+// console.log(versions)
+
+for (const cfg of configs) {
+	const patchline = cfg.patchline.toLowerCase();
+	const currentVersion = versions[cfg.patchline];
+	const lastVersion = JSON.parse(fs.readFileSync(`../../content/lol/${patchline}/version.txt`));
+
+	const currentGameVersion = currentVersion.game;
+	const currentClientVersion = currentVersion.client;
+	const lastGameVersion  = lastVersion.game;
+	const lastClientVersion = lastVersion.client;
+
+	console.log('patchline: ' + patchline);
+	console.log('game version:  ');
+	console.log('         old: ' + lastGameVersion);
+	console.log('         new: ' + currentGameVersion);
+	console.log('client version:');
+	console.log('           old: ' + lastClientVersion);
+	console.log('           new: ' + currentClientVersion);
+	console.log('=========================================');
+
+	let is_outdated = currentGameVersion != lastGameVersion || currentClientVersion != lastClientVersion;
+	core.setOutput(`is_${patchline}_outdated`, is_outdated);
+}

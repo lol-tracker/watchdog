@@ -7,9 +7,11 @@ on:
 
 jobs:
   check:
+    name: Check for updates
     runs-on: ubuntu-latest
     outputs:
-      is_outdated: ${{ steps.check.outputs.is_outdated }}
+      is_live_outdated: ${{ steps.check.outputs.is_live_outdated }}
+      is_pbe_outdated: ${{ steps.check.outputs.is_pbe_outdated }}
     steps:
       - name: Checkout watchdog repository
         uses: actions/checkout@v3
@@ -34,12 +36,21 @@ jobs:
         env:
           LOL_REGION: ${{ secrets.LOL_REGION }}
         run: npm run start
-  update:
+  update-live:
+    name: Update LIVE
     needs: check
-    if: ${{ needs.check.outputs.is_outdated == 'true' }}
+    if: ${{ needs.check.outputs.is_live_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
     secrets:
       LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
       LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
       LOL_REGION: ${{ secrets.LOL_REGION }}
       CONTENT_SSH_PRIVATE_KEY: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+  update-pbe:
+    name: Update PBE
+    needs: check
+    if: ${{ needs.check.outputs.is_pbe_outdated == 'true' }}
+    uses: ./.github/workflows/update.yml
+    secrets: inherit
+    with:
+      
