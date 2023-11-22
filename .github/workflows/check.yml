@@ -41,7 +41,6 @@ jobs:
     needs: check
     if: ${{ needs.check.outputs.is_live_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
-    secrets: inherit
     with:
       LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
       LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
@@ -51,7 +50,6 @@ jobs:
     needs: check
     if: ${{ needs.check.outputs.is_pbe_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
-    secrets: inherit
     with:
       LOL_USERNAME: ${{ secrets.LOL_USERNAME_PBE }}
       LOL_PASSWORD: ${{ secrets.LOL_PASSWORD_PBE }}
