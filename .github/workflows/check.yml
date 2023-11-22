@@ -41,11 +41,11 @@ jobs:
     needs: check
     if: ${{ needs.check.outputs.is_live_outdated == 'true' }}
     uses: ./.github/workflows/update.yml
-    secrets:
+    secrets: inherit
+    with:
       LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
       LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
       LOL_REGION: ${{ secrets.LOL_REGION }}
-      CONTENT_SSH_PRIVATE_KEY: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
   update-pbe:
     name: Update PBE
     needs: check
@@ -53,4 +53,8 @@ jobs:
     uses: ./.github/workflows/update.yml
     secrets: inherit
     with:
-      
+      LOL_USERNAME: ${{ secrets.LOL_USERNAME_PBE }}
+      LOL_PASSWORD: ${{ secrets.LOL_PASSWORD_PBE }}
+      LOL_REGION: PBE1
+      LOL_PATCHLINE: PBE
+      LOL_CONFIG: PBE
