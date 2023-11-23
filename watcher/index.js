@@ -10,6 +10,9 @@ import { spawnSync } from 'child_process';
 const REGION = process.env.LOL_REGION;
 const IS_WINDOWS = os.platform() == 'win32';
 
+console.log('REGION: ' + REGION);
+console.log('IS_WINDOWS: ' + IS_WINDOWS);
+
 let MANIFEST_DOWNLOADER_URL;
 let MANIFEST_DOWNLOADER_PATH;
 if (IS_WINDOWS) {
@@ -93,6 +96,8 @@ async function getClientVersion(region, patchline) {
             }
         }
 
+		console.error(`could not find patch url for region ${patchline} in region ${region}!`);
+		console.log('configs count: ' + configs.length);
         return undefined;
     }
     const patchUrl = getPatchUrl();
@@ -110,6 +115,7 @@ async function getClientVersion(region, patchline) {
 
 if (!fs.existsSync(MANIFEST_DOWNLOADER_PATH)) {
 	await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
+
 	if (!IS_WINDOWS) {
 		fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
 	}
