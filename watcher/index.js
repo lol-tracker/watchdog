@@ -77,8 +77,15 @@ async function getGameVersion(region) {
 }
 
 async function getClientVersion(region, patchline) {
-    const MANIFEST_PATH = 'temp/client.manifest';
-    const CLIENT_PATH = 'LeagueClient.exe'
+	const UID = `${patchline}_${region}`;
+    const MANIFEST_PATH = `temp/client_${UID}.manifest`;
+	const OUT_PATH = `temp/${UID}`;
+	const EXE_NAME = 'LeagueClient.exe';
+    const CLIENT_PATH = `${OUT_PATH}/${EXE_NAME}`;
+
+	if (!fs.existsSync(OUT_PATH)) {
+		fs.mkdirSync(OUT_PATH);
+	}
 
     const content = await fetch_async('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
 
@@ -101,12 +108,13 @@ async function getClientVersion(region, patchline) {
         return undefined;
     }
     const patchUrl = getPatchUrl();
+	console.log('patchUrl: ' + patchUrl);
 
     await downloadToFile(patchUrl, MANIFEST_PATH);
 
-    spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
+    spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', EXE_NAME, '-o', OUT_PATH]);
 
-    const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
+    const buffer = fs.readFileSync(CLIENT_PATH);
     const versionInfo = vs.parseBytes(buffer)[0];
     const entry = versionInfo.getStringTables()[0];
 
