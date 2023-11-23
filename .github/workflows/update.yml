@@ -39,11 +39,12 @@ jobs:
         with:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+          ref: ${{ github.ref_name }}
           path: 'content'
-      - name: Change content branch
-        if: ${{ github.ref_name != 'main' }}
-        path: 'content'
-        run: git switch -C ${{ github.ref_name }}
+      # - name: Change content branch
+      #   if: ${{ github.ref_name != 'main' }}
+      #   path: 'content'
+      #   run: git switch -C ${{ github.ref_name }}
       - name: Setup the League Client
         id: league-client
         uses: lol-tracker/setup-league-client@latest
