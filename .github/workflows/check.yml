@@ -14,14 +14,15 @@ jobs:
       is_pbe_outdated: ${{ steps.check.outputs.is_pbe_outdated }}
     steps:
       - name: Checkout watchdog repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'watchdog'
       - name: Checkout content repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ vars.CONTENT_REPOSITORY }}
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+          ref: ${{ github.ref_name }}
           path: 'content'
       - name: Install node
         uses: actions/setup-node@v3
