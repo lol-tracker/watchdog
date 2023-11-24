@@ -41,6 +41,8 @@ jobs:
     name: Update LIVE
     needs: check
     if: ${{ needs.check.outputs.is_live_outdated == 'true' }}
+    concurrency:
+      group: update
     uses: ./.github/workflows/update.yml
     secrets: inherit
     with:
@@ -49,6 +51,8 @@ jobs:
     name: Update PBE
     needs: check
     if: ${{ needs.check.outputs.is_pbe_outdated == 'true' }}
+    concurrency:
+      group: update
     uses: ./.github/workflows/update.yml
     secrets: inherit
     with:
