@@ -79,7 +79,7 @@ jobs:
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
           git config --global user.name "lol-tracker-bot"
           git add .
-          $patchline = ${{ !inputs.PBE && 'live' || 'pbe' }}
+          $patchline = '${{ !inputs.PBE && 'live' || 'pbe' }}'
           $ver = (Get-Content "lol/$patchline/version.txt" | ConvertFrom-Json)
           git commit -m "[$($patchline.ToUpper())] Client: $($ver.client) / Game: $($ver.game)"
           git push
