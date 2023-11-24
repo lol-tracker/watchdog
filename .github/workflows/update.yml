@@ -5,7 +5,7 @@ on:
       push_update:
         description: 'Should we push update to github?'
         required: false
-        default: true
+        default: false
         type: boolean
       PBE:
         description: 'PBE?'
@@ -14,6 +14,10 @@ on:
         type: boolean
   workflow_call:
     inputs:
+      push_update:
+        required: false
+        default: true
+        type: boolean
       PBE:
         required: false
         default: false
@@ -33,7 +37,6 @@ jobs:
   update:
     runs-on: windows-latest
     steps:
-      - run: 'echo event_name: ${{ github.event_name }}'
       - name: Checkout watchdog repository
         uses: actions/checkout@v4
         with:
@@ -56,8 +59,8 @@ jobs:
           config: ${{ inputs.PBE && 'PBE' || '' }}
           install-pengu: true
       - name: Parse the content
-        shell: pwsh
         working-directory: content
+        shell: pwsh
         run: '& ../watchdog/updater/update.ps1'
         env:
           RCS_PASSWORD: ${{ steps.league-client.outputs.rcs-password }}
@@ -69,12 +72,14 @@ jobs:
           LCU_PATCHLINE: ${{ !inputs.PBE && 'live' || 'pbe' }}
           PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
-        if: ${{ github.event_name == 'workflow_call' || github.event.inputs.push_update == 'true' }}
+        if: ${{ github.event.inputs.push_update == 'true' }}
         working-directory: content
+        shell: pwsh
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
           git config --global user.name "lol-tracker-bot"
           git add .
-          $ver = (Get-Content 'lol/version.txt' | ConvertFrom-Json).client
-          git commit -m "Updated to version $ver"
+          $patchline = ${{ !inputs.PBE && 'live' || 'pbe' }}
+          $ver = (Get-Content "lol/$patchline/version.txt" | ConvertFrom-Json)
+          git commit -m "[$($patchline.ToUpper())] Client: $($ver.client) / Game: $($ver.game)"
           git push

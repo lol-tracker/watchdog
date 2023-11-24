@@ -4,6 +4,12 @@ on:
   schedule:
     - cron:  '0 */4 * * *'
   workflow_dispatch:
+    inputs:
+      push_update:
+        description: 'Should we push update to github?'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   check:
@@ -46,6 +52,7 @@ jobs:
     uses: ./.github/workflows/update.yml
     secrets: inherit
     with:
+      push_update: ${{ github.event_name == 'schedule' || inputs.push_update }}
       PBE: false
   update-pbe:
     name: Update PBE
@@ -56,4 +63,5 @@ jobs:
     uses: ./.github/workflows/update.yml
     secrets: inherit
     with:
+      push_update: ${{ github.event_name == 'schedule' || inputs.push_update }}
       PBE: true
