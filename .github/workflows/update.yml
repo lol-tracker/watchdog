@@ -7,25 +7,28 @@ on:
         required: false
         default: true
         type: boolean
+      PBE:
+        description: 'PBE?'
+        required: false
+        default: false
+        type: boolean
   workflow_call:
     inputs:
+      PBE:
+        required: false
+        default: false
+        type: boolean
+    secrets:
       LOL_USERNAME:
         required: true
-        type: string
       LOL_PASSWORD:
         required: true
-        type: string
+      LOL_USERNAME_PBE:
+        required: false
+      LOL_PASSWORD_PBE:
+        required: false
       LOL_REGION:
         required: true
-        type: string
-      LOL_PATCHLINE:
-        required: false
-        default: 'live'
-        type: string
-      LOL_CONFIG:
-        required: false
-        default: ''
-        type: string
 jobs:
   update:
     runs-on: windows-latest
@@ -41,19 +44,15 @@ jobs:
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
           ref: ${{ github.ref_name }}
           path: 'content'
-      # - name: Change content branch
-      #   if: ${{ github.ref_name != 'main' }}
-      #   path: 'content'
-      #   run: git switch -C ${{ github.ref_name }}
       - name: Setup the League Client
         id: league-client
         uses: lol-tracker/setup-league-client@latest
         with:
-          username: ${{ github.event_name == 'workflow_call' && inputs.LOL_USERNAME || secrets.LOL_USERNAME }}
-          password: ${{ github.event_name == 'workflow_call' && inputs.LOL_PASSWORD || secrets.LOL_PASSWORD }}
-          region: ${{ github.event_name == 'workflow_call' && inputs.LOL_REGION || secrets.LOL_REGION }}
-          patchline: ${{ github.event_name == 'workflow_call' && inputs.LOL_PATCHLINE || 'live' }}
-          config: ${{ github.event_name == 'workflow_call' && inputs.LOL_CONFIG || '' }}
+          username: ${{ !inputs.PBE && secrets.LOL_USERNAME || secrets.LOL_USERNAME_PBE }}
+          password: ${{ !inputs.PBE && secrets.LOL_PASSWORD || secrets.LOL_PASSWORD_PBE }}
+          region: ${{ !inputs.PBE && secrets.LOL_REGION || secrets.LOL_REGION }}
+          patchline: ${{ !inputs.PBE && 'live' || 'pbe' }}
+          config: ${{ inputs.PBE && 'PBE' || '' }}
           install-pengu: true
       - name: Parse the content
         shell: pwsh
