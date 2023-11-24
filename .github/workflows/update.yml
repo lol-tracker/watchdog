@@ -54,7 +54,7 @@ jobs:
         with:
           username: ${{ !inputs.PBE && secrets.LOL_USERNAME || secrets.LOL_USERNAME_PBE }}
           password: ${{ !inputs.PBE && secrets.LOL_PASSWORD || secrets.LOL_PASSWORD_PBE }}
-          region: ${{ !inputs.PBE && secrets.LOL_REGION || secrets.LOL_REGION }}
+          region: ${{ !inputs.PBE && secrets.LOL_REGION || 'pbe1' }}
           patchline: ${{ !inputs.PBE && 'live' || 'pbe' }}
           config: ${{ inputs.PBE && 'PBE' || '' }}
           install-pengu: true
