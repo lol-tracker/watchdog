@@ -37,16 +37,6 @@ jobs:
         env:
           LOL_REGION: ${{ secrets.LOL_REGION }}
         run: npm run start
-      - name: Update PBE
-        id: update-pbe
-        if: ${{ steps.check.outputs.is_pbe_outdated }}
-        uses: ./.github/workflows/update.yml
-        with:
-          LOL_USERNAME: ${{ secrets.LOL_USERNAME_PBE }}
-          LOL_PASSWORD: ${{ secrets.LOL_PASSWORD_PBE }}
-          LOL_REGION: PBE1
-          LOL_PATCHLINE: PBE
-          LOL_CONFIG: PBE
   update-live:
     name: Update LIVE
     needs: check
