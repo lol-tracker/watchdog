@@ -23,45 +23,33 @@ function Invoke-RiotRequest {
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    While ($True) {
-        Try {
-            $pass = ConvertTo-SecureString $password -AsPlainText -Force
-            $cred = New-Object -TypeName PSCredential -ArgumentList 'riot', $pass
+    $pass = ConvertTo-SecureString $password -AsPlainText -Force
+    $cred = New-Object -TypeName PSCredential -ArgumentList 'riot', $pass
 
-            $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
-                -SkipCertificateCheck `
-                -Method $method `
-                -Authentication 'Basic' `
-                -Credential $cred `
-                -ContentType 'application/json' `
-                -Body $($body | ConvertTo-Json)
+    $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
+        -SkipCertificateCheck `
+        -Method $method `
+        -Authentication 'Basic' `
+        -Credential $cred `
+        -ContentType 'application/json' `
+        -Body $($body | ConvertTo-Json)
 
-            if (![string]::IsNullOrEmpty($OutFile)) {
-                # We need this dirty code to properly format json when outputting
+    if (![string]::IsNullOrEmpty($OutFile)) {
+        # We need this dirty code to properly format json when outputting
 
-                if ($result -is [string] ||
-                    $result -is [number]) {
-                    Out-File $OutFile $result
-                }
-                else
-                {
-                    ConvertTo-Json $result -Depth 100 | Out-File $OutFile
-                }
-
-                return $null
-            }
-            
-            return $result
-        } Catch {
-            $attempts--
-            If ($attempts -le 0) {
-                Write-Host "Failed to $method '$path'."
-                Throw $_
-            }
-            Write-Host "Failed to $method '$path', retrying: $_"
-            Start-Sleep 5
+        if ($result -is [string] ||
+            $result -is [number]) {
+            Out-File $OutFile $result
         }
+        else
+        {
+            ConvertTo-Json $result -Depth 100 | Out-File $OutFile
+        }
+
+        return $null
     }
+    
+    return $result
 }
 
 function Invoke-RCSRequest {
