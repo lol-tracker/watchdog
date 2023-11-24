@@ -5,9 +5,12 @@ $RCS_PORT = $env:RCS_PORT
 
 $LOL_PWD = $env:LCU_PASSWORD
 $LOL_PORT = $env:LCU_PORT
+$LOL_PATCHLINE = $env:LCU_PATCHLINE
 
 $PENGU_DIR = $env:PENGU_DIR
-Write-Host "Pengu directory: $PENGU_DIR"
+
+$RCS_DIR = 'rcs'
+$LOL_DIR = 'lol/' + $LOL_PATCHLINE
 
 function Invoke-RiotRequest {
     Param (
@@ -107,28 +110,29 @@ function Clean-Folder {
 
 Create-Folder 'rcs'
 Create-Folder 'lol'
+Create-Folder $LOL_DIR
 
 Write-Host 'Dumping RCS schemas...'
-Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile 'rcs/swagger.json'
-Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile 'rcs/openapi.json'
+Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile $RCS_DIR/swagger.json
+Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile $RCS_DIR/openapi.json
 
 Write-Host 'Dumping RCS data...'
-Invoke-RCSRequest '/product-metadata/v2/products' -OutFile 'rcs/products.json'
+Invoke-RCSRequest '/product-metadata/v2/products' -OutFile $RCS_DIR/products.json
 
 Write-Host 'Dumping LCU schemas...'
-Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile 'lol/swagger.json'
-Invoke-LOLRequest '/swagger/v3/openapi.json' -OutFile 'lol/openapi.json'
+Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile $LOL_DIR/swagger.json
+Invoke-LOLRequest '/swagger/v3/openapi.json' -OutFile $LOL_DIR/openapi.json
 
 Write-Host 'Dumping LCU data...'
-Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile 'lol/maps.json'
-Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile 'lol/queues.json'
-Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile 'lol/catalog.json'
+Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile $LOL_DIR/maps.json
+Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile $LOL_DIR/queues.json
+Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile $LOL_DIR/catalog.json
 
 Write-Host 'Dumping LOL version...'
 $versionObject = @{}
 $versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds').version)
 $versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version').TrimStart('"').TrimEnd('"'))
-ConvertTo-Json $versionObject | Out-File "lol/version.txt"
+ConvertTo-Json $versionObject | Out-File $LOL_DIR/version.txt
 
 Write-Host 'Copying pengu plugin...'
 New-Item -Path "$PENGU_DIR/plugins/updater-pengu" -ItemType Directory -Force
@@ -166,14 +170,14 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status") -And $attempts
 }
 
 Write-Host 'Copying plugin output to content folder...'
-Clean-Folder .\plugins\
-Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR\plugins\updater-pengu\output\*" -Destination .\plugins\
+Clean-Folder ./plugins/
+Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR/plugins/updater-pengu/output/*" -Destination $LOL_DIR/plugins/
 
 Write-Host 'Installing js beautifier...'
 npm i -g js-beautify
 
 Write-Host 'Beautifying plugins...'
-Push-Location .\plugins\
+Push-Location ./plugins/
 js-beautify -f * -r --type js
 Pop-Location
 
