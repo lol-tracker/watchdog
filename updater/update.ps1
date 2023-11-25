@@ -168,15 +168,17 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status") -And $attempts
 	}
 }
 
+$plugins_dir = "$LOL_DIR/plugins/"
+
 Write-Host 'Copying plugin output to content folder...'
-Clean-Folder ./plugins/
-Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR/plugins/updater-pengu/output/*" -Destination $LOL_DIR/plugins/
+Clean-Folder $plugins_dir
+Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR/plugins/updater-pengu/output/*" -Destination $plugins_dir
 
 Write-Host 'Installing js beautifier...'
 npm i -g js-beautify
 
 Write-Host 'Beautifying plugins...'
-Push-Location ./plugins/
+Push-Location $plugins_dir
 js-beautify -f * -r --type js
 Pop-Location
 
