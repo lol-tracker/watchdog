@@ -50,7 +50,7 @@ jobs:
           path: 'content'
       - name: Setup the League Client
         id: league-client
-        uses: lol-tracker/setup-league-client
+        uses: lol-tracker/setup-league-client@main
         with:
           username: ${{ !inputs.PBE && secrets.LOL_USERNAME || secrets.LOL_USERNAME_PBE }}
           password: ${{ !inputs.PBE && secrets.LOL_PASSWORD || secrets.LOL_PASSWORD_PBE }}
