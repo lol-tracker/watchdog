@@ -7,9 +7,11 @@ import core from '@actions/core';
 
 import { spawnSync } from 'child_process';
 
-const REGION = process.env.LOL_REGION.toLowerCase();
-const PATCHLINE = 'live';
+const REGION = process.env.LOL_REGION;
 const IS_WINDOWS = os.platform() == 'win32';
+
+console.log('REGION: ' + REGION);
+console.log('IS_WINDOWS: ' + IS_WINDOWS);
 
 let MANIFEST_DOWNLOADER_URL;
 let MANIFEST_DOWNLOADER_PATH;
@@ -44,101 +46,137 @@ function fetch_async(url) {
                 return reject(err)
             })
     });
-
-    // return new Promise(async (resolve, reject) => {
-    //     for (let i = 0; i < 5; ++i) {
-    //         const response = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-    //         const content = await response.text();
-
-    //         try {
-    //             return resolve(JSON.parse(content));
-    //         } catch {
-    //             console.log(`failed to fetch a resource! retries left: ${5 - i - 1}`);
-    //             console.log(content);
-    //             await new Promise(r => setTimeout(r, 3000));
-    //         }
-    //     }
-    
-    //     reject();
-    // });
 }
 
-async function getGameVersion() {
-    const content = await fetch_async('https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/EUW1?q[platform]=windows&q[published]=true');
+function downloadToFile(url, path) {
+	return new Promise((resolve, reject) => {
+		https.get(url, response => {
+			// redirection
+			if (response.statusCode > 300 && response.statusCode < 400 && !!response.headers.location) {
+				return resolve(downloadToFile(response.headers.location, path));
+			}
+
+			if (response.statusCode != 200) {
+				return reject(new Error(response.statusMessage));
+			}
+
+			const stream = fs.createWriteStream(path).on('finish', () => {
+				resolve({});
+			})
+
+			response.pipe(stream);
+		}).on('error', error => {
+			reject(error);
+		});
+	});
+}
+
+async function getGameVersion(region) {
+    const content = await fetch_async(`https://sieve.services.riotcdn.net/api/v1/products/lol/version-sets/${region.toUpperCase()}?q[platform]=windows&q[published]=true`);
     return content["releases"][0]["compat_version"]["id"];
 }
 
-async function getClientVersion() {
-    const MANIFEST_PATH = 'temp/client.manifest';
-    const CLIENT_PATH = 'LeagueClient.exe'
+async function getClientVersion(region, patchline) {
+	const UID = `${patchline}_${region}`;
+    const MANIFEST_PATH = `temp/client_${UID}.manifest`;
+	const OUT_PATH = `temp/${UID}`;
+	const EXE_NAME = 'LeagueClient.exe';
+    const CLIENT_PATH = `${OUT_PATH}/${EXE_NAME}`;
+
+	if (!fs.existsSync(OUT_PATH)) {
+		fs.mkdirSync(OUT_PATH);
+	}
 
     const content = await fetch_async('https://clientconfig.rpg.riotgames.com/api/v1/config/public?namespace=keystone.products.league_of_legends.patchlines');
 
     function getPatchUrl() {
-        const configs = content[`keystone.products.league_of_legends.patchlines.${PATCHLINE.toLowerCase()}`]['platforms']['win']['configurations'];
-        const region = REGION.toUpperCase();
+        const configs = content[`keystone.products.league_of_legends.patchlines.${patchline.toLowerCase()}`]['platforms']['win']['configurations'];
+
+		if (configs.length == 1) {
+			return configs[0]['patch_url'];
+		}
         
+        region = region.toUpperCase();
         for (const config of configs) {
             if (config['id'] == region) {
                 return config['patch_url'];
             }
         }
 
+		console.error(`could not find patch url for region ${patchline} in region ${region}!`);
+		console.log('configs count: ' + configs.length);
         return undefined;
     }
     const patchUrl = getPatchUrl();
+	console.log('patchUrl: ' + patchUrl);
 
-    function downloadToFile(url, path) {
-        return new Promise((resolve, reject) => {
-            https.get(url, response => {
-                // redirection
-                if (response.statusCode > 300 && response.statusCode < 400 && !!response.headers.location) {
-                    return resolve(downloadToFile(response.headers.location, path));
-                }
-                
-                if (response.statusCode != 200) {
-                    return reject(new Error(response.statusMessage));
-                }
-    
-                const stream = fs.createWriteStream(path).on('finish', () => {
-                    resolve({});
-                })
-    
-                response.pipe(stream);
-            }).on('error', error => {
-                reject(error);
-            });
-        });
-    }
     await downloadToFile(patchUrl, MANIFEST_PATH);
 
-    await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
-    if (!IS_WINDOWS) {
-        fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
-    }
+    spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', EXE_NAME, '-o', OUT_PATH]);
 
-    spawnSync(MANIFEST_DOWNLOADER_PATH, [MANIFEST_PATH, '-f', CLIENT_PATH, '-o', 'temp']);
-
-    const buffer = fs.readFileSync('temp/' + CLIENT_PATH);
+    const buffer = fs.readFileSync(CLIENT_PATH);
     const versionInfo = vs.parseBytes(buffer)[0];
     const entry = versionInfo.getStringTables()[0];
 
     return entry['FileVersion'];
 }
 
-const currentGameVersion = await getGameVersion();
-const currentClientVersion = await getClientVersion();
+if (!fs.existsSync(MANIFEST_DOWNLOADER_PATH)) {
+	await downloadToFile(MANIFEST_DOWNLOADER_URL, MANIFEST_DOWNLOADER_PATH);
 
-const version = JSON.parse(fs.readFileSync('../../content/lol/version.txt'));
-const lastGameVersion  = version.game;
-const lastClientVersion = version.client;
+	if (!IS_WINDOWS) {
+		fs.chmodSync(MANIFEST_DOWNLOADER_PATH, 0o775);
+	}
+}
 
-console.log('game version:  ');
-console.log('         old:  ' + lastGameVersion);
-console.log('         new:  ' + currentGameVersion);
-console.log('client version:');
-console.log('          old: ' + lastClientVersion);
-console.log('          new: ' + currentClientVersion);
+let configs = [
+	{
+		region: REGION,
+		patchline: 'LIVE',
+	},
+	{
+		region: 'PBE1',
+		patchline: 'PBE',
+	}
+]
 
-let is_outdated = currentGameVersion != lastGameVersion || currentClientVersion != lastClientVersion;
-core.setOutput('is_outdated', is_outdated);
+let versions = []
+let tasks = [];
+for (const cfg of configs) {
+	versions[cfg.patchline] = {}
+
+	tasks.push(
+		getGameVersion(cfg.region).then((result) => {
+			versions[cfg.patchline].game = result;
+		}),
+		getClientVersion(cfg.region, cfg.patchline).then((result) => {
+			versions[cfg.patchline].client = result;
+		})
+	)
+}
+
+await Promise.all(tasks);
+// console.log(versions)
+
+for (const cfg of configs) {
+	const patchline = cfg.patchline.toLowerCase();
+	const currentVersion = versions[cfg.patchline];
+	const lastVersion = JSON.parse(fs.readFileSync(`../../content/lol/${patchline}/version.txt`));
+
+	const currentGameVersion = currentVersion.game;
+	const currentClientVersion = currentVersion.client;
+	const lastGameVersion  = lastVersion.game;
+	const lastClientVersion = lastVersion.client;
+
+	console.log('patchline: ' + patchline);
+	console.log('game version:  ');
+	console.log('         old: ' + lastGameVersion);
+	console.log('         new: ' + currentGameVersion);
+	console.log('client version:');
+	console.log('           old: ' + lastClientVersion);
+	console.log('           new: ' + currentClientVersion);
+	console.log('=========================================');
+
+	let is_outdated = currentGameVersion != lastGameVersion || currentClientVersion != lastClientVersion;
+	core.setOutput(`is_${patchline}_outdated`, is_outdated);
+}

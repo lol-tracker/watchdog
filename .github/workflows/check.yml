@@ -4,22 +4,31 @@ on:
   schedule:
     - cron:  '0 */4 * * *'
   workflow_dispatch:
+    inputs:
+      push_update:
+        description: 'Should we push update to github?'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   check:
+    name: Check for updates
     runs-on: ubuntu-latest
     outputs:
-      is_outdated: ${{ steps.check.outputs.is_outdated }}
+      is_live_outdated: ${{ steps.check.outputs.is_live_outdated }}
+      is_pbe_outdated: ${{ steps.check.outputs.is_pbe_outdated }}
     steps:
       - name: Checkout watchdog repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: 'watchdog'
       - name: Checkout content repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ vars.CONTENT_REPOSITORY }}
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+          ref: ${{ github.ref_name }}
           path: 'content'
       - name: Install node
         uses: actions/setup-node@v3
@@ -34,12 +43,25 @@ jobs:
         env:
           LOL_REGION: ${{ secrets.LOL_REGION }}
         run: npm run start
-  update:
+  update-live:
+    name: Update LIVE
     needs: check
-    if: ${{ needs.check.outputs.is_outdated == 'true' }}
+    if: ${{ needs.check.outputs.is_live_outdated == 'true' }}
+    concurrency:
+      group: update
     uses: ./.github/workflows/update.yml
-    secrets:
-      LOL_USERNAME: ${{ secrets.LOL_USERNAME }}
-      LOL_PASSWORD: ${{ secrets.LOL_PASSWORD }}
-      LOL_REGION: ${{ secrets.LOL_REGION }}
-      CONTENT_SSH_PRIVATE_KEY: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+    secrets: inherit
+    with:
+      push_update: ${{ github.event_name == 'schedule' || inputs.push_update }}
+      PBE: false
+  update-pbe:
+    name: Update PBE
+    needs: check
+    if: ${{ needs.check.outputs.is_pbe_outdated == 'true' }}
+    concurrency:
+      group: update
+    uses: ./.github/workflows/update.yml
+    secrets: inherit
+    with:
+      push_update: ${{ github.event_name == 'schedule' || inputs.push_update }}
+      PBE: true

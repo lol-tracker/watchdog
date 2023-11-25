@@ -5,17 +5,33 @@ on:
       push_update:
         description: 'Should we push update to github?'
         required: false
-        default: true
+        default: false
+        type: boolean
+      PBE:
+        description: 'PBE?'
+        required: false
+        default: false
         type: boolean
   workflow_call:
+    inputs:
+      push_update:
+        required: false
+        default: true
+        type: boolean
+      PBE:
+        required: false
+        default: false
+        type: boolean
     secrets:
       LOL_USERNAME:
         required: true
       LOL_PASSWORD:
         required: true
+      LOL_USERNAME_PBE:
+        required: false
+      LOL_PASSWORD_PBE:
+        required: false
       LOL_REGION:
-        required: true
-      CONTENT_SSH_PRIVATE_KEY:
         required: true
 jobs:
   update:
@@ -30,18 +46,21 @@ jobs:
         with:
           repository: 'lol-tracker/content'
           ssh-key: ${{ secrets.CONTENT_SSH_PRIVATE_KEY }}
+          ref: ${{ github.ref_name }}
           path: 'content'
       - name: Setup the League Client
         id: league-client
-        uses: lol-tracker/setup-league-client@latest
+        uses: lol-tracker/setup-league-client@dev
         with:
-          username: ${{ secrets.LOL_USERNAME }}
-          password: ${{ secrets.LOL_PASSWORD }}
-          region: ${{ secrets.LOL_REGION }}
+          username: ${{ !inputs.PBE && secrets.LOL_USERNAME || secrets.LOL_USERNAME_PBE }}
+          password: ${{ !inputs.PBE && secrets.LOL_PASSWORD || secrets.LOL_PASSWORD_PBE }}
+          region: ${{ !inputs.PBE && secrets.LOL_REGION || 'pbe' }}
+          patchline: ${{ !inputs.PBE && 'live' || 'pbe' }}
+          config: ${{ inputs.PBE && 'PBE' || '' }}
           install-pengu: true
       - name: Parse the content
-        shell: pwsh
         working-directory: content
+        shell: pwsh
         run: '& ../watchdog/updater/update.ps1'
         env:
           RCS_PASSWORD: ${{ steps.league-client.outputs.rcs-password }}
@@ -50,14 +69,18 @@ jobs:
           LCU_PASSWORD: ${{ steps.league-client.outputs.lcu-password }}
           LCU_PORT: ${{ steps.league-client.outputs.lcu-port }}
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
+          LCU_PATCHLINE: ${{ !inputs.PBE && 'live' || 'pbe' }}
           PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
       - name: Commit and push new content
-        if: ${{ github.event_name == 'workflow_call' || github.event.inputs.push_update == 'true' }}
+        if: ${{ github.event.inputs.push_update == 'true' }}
         working-directory: content
+        shell: pwsh
         run: |
           git config --global user.email "github-action-${{github.actor}}@users.noreply.github.com"
           git config --global user.name "lol-tracker-bot"
+          git pull
           git add .
-          $ver = (Get-Content 'lol/version.txt' | ConvertFrom-Json).client
-          git commit -m "Updated to version $ver"
+          $patchline = '${{ !inputs.PBE && 'live' || 'pbe' }}'
+          $ver = (Get-Content "lol/$patchline/version.txt" | ConvertFrom-Json)
+          git commit -m "[$($patchline.ToUpper())] Client: $($ver.client) / Game: $($ver.game)"
           git push
