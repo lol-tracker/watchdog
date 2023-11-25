@@ -96,6 +96,16 @@ function Clean-Folder {
 	}
 }
 
+function Delete-File {
+	Param (
+		[Parameter(Mandatory=$true)] [String]$name
+	)
+
+    if (Test-Path $name) {
+        Remove-Item $name
+    }
+}
+
 Create-Folder 'rcs'
 Create-Folder 'lol'
 Create-Folder $LOL_DIR
@@ -104,8 +114,9 @@ Write-Host 'Dumping RCS schemas...'
 Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile $RCS_DIR/swagger.json
 Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile $RCS_DIR/openapi.json
 
-Write-Host 'Dumping RCS data...'
-Invoke-RCSRequest '/product-metadata/v2/products' -OutFile $RCS_DIR/products.json
+# Write-Host 'Dumping RCS data...'
+# Invoke-RCSRequest '/product-metadata/v2/products' -OutFile $RCS_DIR/products.json
+Delete-File $RCS_DIR/products.json
 
 Write-Host 'Dumping LCU schemas...'
 Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile $LOL_DIR/swagger.json
