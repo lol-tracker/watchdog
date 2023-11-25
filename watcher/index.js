@@ -163,11 +163,6 @@ for (const cfg of configs) {
 	const currentVersion = versions[cfg.patchline];
 	const lastVersion = JSON.parse(fs.readFileSync(`../../content/lol/${patchline}/version.txt`));
 
-	const currentGameVersion = currentVersion.game;
-	const currentClientVersion = currentVersion.client;
-	const lastGameVersion  = lastVersion.game;
-	const lastClientVersion = lastVersion.client;
-
 	// LCU prints version like 13.24.545.0457
 	// But we get version like 13.24.545.457
 	function fixClientVersion(text) {
@@ -175,8 +170,11 @@ for (const cfg of configs) {
 		v[3] = v[3].padStart(4, '0')
 		return v.join('.')
 	}
-	lastClientVersion = fixClientVersion(lastClientVersion)
-	currentClientVersion = fixClientVersion(currentClientVersion)
+
+	const currentGameVersion = currentVersion.game;
+	const currentClientVersion = fixClientVersion(currentVersion.client);
+	const lastGameVersion  = lastVersion.game;
+	const lastClientVersion = fixClientVersion(lastVersion.client);
 
 	console.log('patchline:' + patchline);
 	console.log('game version:');
