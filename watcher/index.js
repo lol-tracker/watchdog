@@ -168,8 +168,18 @@ for (const cfg of configs) {
 	const lastGameVersion  = lastVersion.game;
 	const lastClientVersion = lastVersion.client;
 
-	console.log('patchline: ' + patchline);
-	console.log('game version:  ');
+	// LCU prints version like 13.24.545.0457
+	// But we get version like 13.24.545.457
+	function fixClientVersion(text) {
+		let v = text.split('.')
+		v[3] = v[3].padStart(4, '0')
+		return v.join('.')
+	}
+	lastClientVersion = fixClientVersion(lastClientVersion)
+	currentClientVersion = fixClientVersion(currentClientVersion)
+
+	console.log('patchline:' + patchline);
+	console.log('game version:');
 	console.log('         old: ' + lastGameVersion);
 	console.log('         new: ' + currentGameVersion);
 	console.log('client version:');
