@@ -26,13 +26,18 @@ function Invoke-RiotRequest {
     $pass = ConvertTo-SecureString $password -AsPlainText -Force
     $cred = New-Object -TypeName PSCredential -ArgumentList 'riot', $pass
 
-    $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
-        -SkipCertificateCheck `
-        -Method $method `
-        -Authentication 'Basic' `
-        -Credential $cred `
-        -ContentType 'application/json' `
-        -Body $($body | ConvertTo-Json)
+    Try {
+        $result = Invoke-RestMethod "https://127.0.0.1:$port$path" `
+            -SkipCertificateCheck `
+            -Method $method `
+            -Authentication 'Basic' `
+            -Credential $cred `
+            -ContentType 'application/json' `
+            -Body $($body | ConvertTo-Json)
+    } Catch {
+        # Better error info
+        throw "Failed to $method '$path'! Error: $_"
+    }
 
     if (![string]::IsNullOrEmpty($OutFile)) {
         # We need this dirty code to properly format json when outputting
