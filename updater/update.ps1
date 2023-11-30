@@ -157,8 +157,7 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/log.txt") -And $attempt
 	$attempts--
 
 	if ($attempts -Eq 0) {
-		Write-Output '::error Failed to install pengu plugin!'
-		Exit
+		throw 'Failed to install pengu plugin!'
 	}
 }
 
@@ -172,7 +171,7 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status") -And $attempts
 	Write-Host "Attempts left: $attempts"
 
 	if ($attempts -Eq 0) {
-		Write-Output '::error Failed to dump plugins!'
+		Write-Output '::error::Failed to dump plugins!'
 		Write-Host 'Log output:'
 		Get-Content "$PENGU_DIR/plugins/updater-pengu/log.txt"
 		Exit
