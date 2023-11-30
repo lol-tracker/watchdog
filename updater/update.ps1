@@ -19,7 +19,7 @@ function Invoke-RiotRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
@@ -36,7 +36,13 @@ function Invoke-RiotRequest {
             -Body $($body | ConvertTo-Json)
     } Catch {
         # Better error info
-        throw "Failed to $method '$path'! Error: $_"
+        $error_msg = $_
+        $msg = "Failed to $method '$path'! Error: $_"
+        if ($Mandatory -ne $True) {
+            Write-Output "::warning::$msg"
+        } else {
+            throw $msg
+        }
     }
 
     if (![string]::IsNullOrEmpty($OutFile)) {
@@ -62,11 +68,11 @@ function Invoke-RCSRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $attempts $OutFile
+    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $Mandatory $OutFile
 }
 
 function Invoke-LOLRequest {
@@ -74,11 +80,11 @@ function Invoke-LOLRequest {
         [Parameter(Mandatory=$true)]  [String]$path,
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
-        [Parameter(Mandatory=$false)] [Int]$attempts = 100,
+        [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $attempts $OutFile
+    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $Mandatory $OutFile
 }
 
 function Create-Folder {
@@ -116,16 +122,16 @@ Create-Folder 'lol'
 Create-Folder $LOL_DIR
 
 Write-Host 'Dumping RCS schemas...'
-Invoke-RCSRequest '/swagger/v2/swagger.json' -OutFile $RCS_DIR/swagger.json
-Invoke-RCSRequest '/swagger/v3/openapi.json' -OutFile $RCS_DIR/openapi.json
+Invoke-RCSRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $RCS_DIR/swagger.json
+Invoke-RCSRequest '/swagger/v3/openapi.json' -Mandatory $True -OutFile $RCS_DIR/openapi.json
 
 # Write-Host 'Dumping RCS data...'
 # Invoke-RCSRequest '/product-metadata/v2/products' -OutFile $RCS_DIR/products.json
 Delete-File $RCS_DIR/products.json
 
 Write-Host 'Dumping LCU schemas...'
-Invoke-LOLRequest '/swagger/v2/swagger.json' -OutFile $LOL_DIR/swagger.json
-Invoke-LOLRequest '/swagger/v3/openapi.json' -OutFile $LOL_DIR/openapi.json
+Invoke-LOLRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_DIR/swagger.json
+Invoke-LOLRequest '/swagger/v3/openapi.json' -Mandatory $True -OutFile $LOL_DIR/openapi.json
 
 Write-Host 'Dumping LCU data...'
 Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile $LOL_DIR/maps.json
@@ -134,8 +140,8 @@ Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile $LOL_DIR/catalog.json
 
 Write-Host 'Dumping LOL version...'
 $versionObject = @{}
-$versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds').version)
-$versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version').TrimStart('"').TrimEnd('"'))
+$versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds' -Mandatory $True).version)
+$versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version' -Mandatory $True).TrimStart('"').TrimEnd('"'))
 ConvertTo-Json $versionObject | Out-File $LOL_DIR/version.txt
 
 Write-Host 'Copying pengu plugin...'
