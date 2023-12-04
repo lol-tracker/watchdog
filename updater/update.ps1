@@ -6,8 +6,12 @@ $RCS_PORT = $env:RCS_PORT
 $LOL_PWD = $env:LCU_PASSWORD
 $LOL_PORT = $env:LCU_PORT
 $LOL_PATCHLINE = $env:LCU_PATCHLINE
+$LCU_DIR = $env:LCU_DIR
 
 $PENGU_DIR = $env:PENGU_DIR
+$PENGU_PLUGIN_DIR = "$PENGU_DIR/plugins/updater-pengu"
+$PENGU_PLUGIN_STATUS_PATH = "$PENGU_PLUGIN_DIR/status"
+$PENGU_PLUGIN_LOG_PATH = "$PENGU_PLUGIN_DIR/log.txt"
 
 $RCS_DIR = 'rcs'
 $LOL_DIR = 'lol/' + $LOL_PATCHLINE
@@ -36,12 +40,11 @@ function Invoke-RiotRequest {
             -Body $($body | ConvertTo-Json)
     } Catch {
         # Better error info
-        $error_msg = $_
         $msg = "Failed to $method '$path'! Error: $_"
         if ($Mandatory -ne $True) {
-            Write-Output "::warning::$msg"
+            Warn $msg
         } else {
-            throw $msg
+            Fail $msg
         }
     }
 
@@ -117,6 +120,45 @@ function Delete-File {
     }
 }
 
+function Copy-Logs {
+    $logsPath = "$env:GITHUB_WORKSPACE/updaterLogs"
+    Create-Folder $logsPath
+    
+    Write-Output "logs-upload=true" >> $env:GITHUB_OUTPUT
+    Write-Output "logs-path=$logsPath" >> $env:GITHUB_OUTPUT
+    
+    if (Test-Path $PENGU_PLUGIN_LOG_PATH) {
+        Copy-Item $PENGU_PLUGIN_LOG_PATH -Destination "$logsPath/pengu_log.txt"
+    }
+
+    $leagueLogsPath = "$LCU_DIR/Logs/LeagueClient Logs/*"
+    if (Test-Path $leagueLogsPath)
+        $path = "$logsPath/lcu/"
+        Create-Folder $path
+        Copy-Item -Force -Recurse -Path $leagueLogsPath -Destination $path
+    }
+}
+
+$copyLogs = $false
+
+function Warn {
+    Param (
+        [Parameter(Mandatory=$true)] [ParameterType]$message
+    )
+
+    $copyLogs = $True
+    Write-Output "::warning::$message"
+}
+
+function Fail {
+    Param (
+        [Parameter(Mandatory=$true)] [ParameterType]$message
+    )
+
+    Copy-Logs
+    throw $message
+}
+
 Create-Folder 'rcs'
 Create-Folder 'lol'
 Create-Folder $LOL_DIR
@@ -145,11 +187,11 @@ $versionObject.Add('game', (Invoke-LOLRequest '/lol-patch/v1/game-version' -Mand
 ConvertTo-Json $versionObject | Out-File $LOL_DIR/version.txt
 
 Write-Host 'Copying pengu plugin...'
-New-Item -Path "$PENGU_DIR/plugins/updater-pengu" -ItemType Directory -Force
-Copy-Item ..\watchdog\updater-pengu\dist\index.js "$PENGU_DIR/plugins/updater-pengu/index.js"
+New-Item -Path $PENGU_PLUGIN_DIR -ItemType Directory -Force
+Copy-Item ..\watchdog\updater-pengu\dist\index.js "$PENGU_PLUGIN_DIR/index.js"
 
 $attempts = 5
-while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/log.txt") -And $attempts -Gt 0) {
+while (-not (Test-Path $PENGU_PLUGIN_LOG_PATH) -And $attempts -Gt 0) {
 	Write-Host "Restarting LOL UX... Attempts left: $attempts"
 	Invoke-LOLRequest '/riotclient/kill-and-restart-ux' 'POST'
 	
@@ -157,24 +199,21 @@ while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/log.txt") -And $attempt
 	$attempts--
 
 	if ($attempts -Eq 0) {
-		throw 'Failed to install pengu plugin!'
+		Fail 'Failed to install pengu plugin!'
 	}
 }
 
 # Wait until pengu dumper is done...
 Write-Host 'Dumping plugins...'
 $attempts = 100
-while (-not (Test-Path "$PENGU_DIR/plugins/updater-pengu/status") -And $attempts -Gt 0) {
+while (-not (Test-Path $PENGU_PLUGIN_STATUS_PATH) -And $attempts -Gt 0) {
 	Start-Sleep 1
 
 	$attempts--
 	Write-Host "Attempts left: $attempts"
 
 	if ($attempts -Eq 0) {
-		Write-Output '::error::Failed to dump plugins!'
-		Write-Host 'Log output:'
-		Get-Content "$PENGU_DIR/plugins/updater-pengu/log.txt"
-		Exit
+		Fail 'Failed to dump plugins!'
 	}
 }
 
@@ -182,7 +221,7 @@ $plugins_dir = "$LOL_DIR/plugins/"
 
 Write-Host 'Copying plugin output to content folder...'
 Clean-Folder $plugins_dir
-Copy-Item -Force -Recurse -Verbose -Path "$PENGU_DIR/plugins/updater-pengu/output/*" -Destination $plugins_dir
+Copy-Item -Force -Recurse -Verbose -Path "$PENGU_PLUGIN_DIR/output/*" -Destination $plugins_dir
 
 Write-Host 'Installing js beautifier...'
 npm i -g js-beautify
@@ -191,5 +230,10 @@ Write-Host 'Beautifying plugins...'
 Push-Location $plugins_dir
 js-beautify -f * -r --type js
 Pop-Location
+
+if ($copyLogs -Eq $True) {
+    Write-Host 'Copying logs...'
+    Copy-Logs
+}
 
 Write-Host 'Success!'

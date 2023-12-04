@@ -59,6 +59,7 @@ jobs:
           config: ${{ inputs.PBE && 'PBE' || '' }}
           install-pengu: true
       - name: Parse the content
+        id: parse
         working-directory: content
         shell: pwsh
         run: '& ../watchdog/updater/update.ps1'
@@ -71,8 +72,14 @@ jobs:
           LCU_DIR: ${{ steps.league-client.outputs.lcu-directory }}
           LCU_PATCHLINE: ${{ !inputs.PBE && 'live' || 'pbe' }}
           PENGU_DIR: ${{ steps.league-client.outputs.pengu-directory }}
+      - name: Upload logs
+        if: ${{ steps.parse.outputs.logs-upload }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'Logs'
+          path: ${{ steps.parse.outputs.logs-path }}
       - name: Commit and push new content
-        if: ${{ github.event.inputs.push_update == 'true' }}
+        if: ${{ inputs.push_update }}
         working-directory: content
         shell: pwsh
         run: |
