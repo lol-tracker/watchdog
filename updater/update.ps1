@@ -143,7 +143,7 @@ $copyLogs = $false
 
 function Warn {
     Param (
-        [Parameter(Mandatory=$true)] [ParameterType]$message
+        [Parameter(Mandatory=$true)] [String]$message
     )
 
     $copyLogs = $True
@@ -152,7 +152,7 @@ function Warn {
 
 function Fail {
     Param (
-        [Parameter(Mandatory=$true)] [ParameterType]$message
+        [Parameter(Mandatory=$true)] [String]$message
     )
 
     Copy-Logs
