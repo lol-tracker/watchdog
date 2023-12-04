@@ -132,7 +132,7 @@ function Copy-Logs {
     }
 
     $leagueLogsPath = "$LCU_DIR/Logs/LeagueClient Logs/*"
-    if (Test-Path $leagueLogsPath)
+    if (Test-Path $leagueLogsPath) {
         $path = "$logsPath/lcu/"
         Create-Folder $path
         Copy-Item -Force -Recurse -Path $leagueLogsPath -Destination $path
