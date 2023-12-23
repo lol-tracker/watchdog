@@ -38,7 +38,7 @@ function Invoke-RiotRequest {
             -Authentication 'Basic' `
             -Credential $cred `
             -ContentType 'application/json' `
-            -Body $($body | ConvertTo-Json)
+            -Body $($body | ConvertTo-Json -Depth 100)
     } Catch {
         # Better error info
         $msg = "Failed to $method '$path'! Error: $_"
