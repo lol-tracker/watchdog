@@ -293,6 +293,7 @@ Wait-Phase 'ChampSelect'
 $champions = Invoke-LOLRequest '/lol-champ-select/v1/pickable-champion-ids'
 Write-Host "champions: $champions"
 
+Start-Sleep 10
 Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST' @{
     completed = $True;
     championId = $champions[0]
