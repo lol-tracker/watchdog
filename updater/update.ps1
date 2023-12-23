@@ -15,6 +15,7 @@ $PENGU_PLUGIN_LOG_PATH = "$PENGU_PLUGIN_DIR/log.txt"
 
 $RCS_DIR = 'rcs'
 $LOL_DIR = 'lol/' + $LOL_PATCHLINE
+$LOL_GAME_DIR = "$LOL_DIR/game"
 
 function Invoke-RiotRequest {
     Param (
@@ -90,6 +91,18 @@ function Invoke-LOLRequest {
     Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $Mandatory $OutFile
 }
 
+function Invoke-GameClientRequest {
+    Param (
+        [Parameter(Mandatory=$true)]  [String]$path,
+        [Parameter(Mandatory=$false)] [String]$method = 'GET',
+        [Parameter(Mandatory=$false)] $body = $null,
+        [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [String]$OutFile = $null
+    )
+
+    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $Mandatory $OutFile
+}
+
 function Create-Folder {
     Param (
         [Parameter(Mandatory=$true)] [String]$name
@@ -159,9 +172,22 @@ function Fail {
     throw $message
 }
 
+function Wait-Phase {
+    Param (
+        [Parameter(Mandatory=$true)] [String]$phase
+    )
+
+    do {
+        Start-Sleep 1
+        $gamePhase = Invoke-LOLRequest '/lol-gameflow/v1/gameflow-phase'-Mandatory $True
+        Write-Host "Waiting for $phase phase. Current phase: $gamePhase"
+    } while ($gamePhase -ne $phase)
+}
+
 Create-Folder 'rcs'
 Create-Folder 'lol'
 Create-Folder $LOL_DIR
+Create-Folder $LOL_GAME_DIR
 
 Write-Host 'Dumping RCS schemas...'
 Invoke-RCSRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $RCS_DIR/swagger.json
@@ -230,6 +256,52 @@ Write-Host 'Beautifying plugins...'
 Push-Location $plugins_dir
 js-beautify -f * -r --type js
 Pop-Location
+
+# Create new lobby
+Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
+    customGameLobby = @{
+      configuration = @{
+        gameMode = "CLASSIC";
+        gameMutator = "";
+        gameServerRegion ="";
+        mapId = 11;
+        mutators = {
+          id = 1
+        };
+        spectatorPolicy = "NotAllowed";
+        teamSize = 5;
+      };
+      lobbyName = "uwu owo";
+      lobbyPassword = "password123?";
+    };
+    isCustom = true;
+    queueId = -1;
+} | Out-Null
+
+Wait-Phase 'Lobby'
+
+Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST'
+
+Wait-Phase 'ChampSelect'
+
+$champions = Invoke-LOLRequest '/lol-champ-select/v1/pickable-champion-ids'
+Write-Host "champions: $champions"
+
+Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST' @{
+    completed = $True;
+    championId = $champions[0]
+}
+
+Wait-Phase 'InProgress'
+
+Start-Sleep 5
+
+Invoke-GameClientRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_GAME_DIR/swagger.json
+Invoke-GameClientRequest '/swagger/v3/openapi.json' -Mandatory $True -OutFile $LOL_GAME_DIR/openapi.json
+
+# END
+
+Stop-Process -Name 'League of Legends' -ErrorAction Ignore
 
 if ($copyLogs -Eq $True) {
     Write-Host 'Copying logs...'
