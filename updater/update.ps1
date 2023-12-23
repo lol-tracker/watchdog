@@ -257,7 +257,7 @@ Push-Location $plugins_dir
 js-beautify -f * -r --type js
 Pop-Location
 
-# Create new lobby
+Write-Host 'Creating a custom lobby...'
 $lobbyResponse = Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
     customGameLobby = @{
       configuration = @{
@@ -286,15 +286,14 @@ if ($lobbyResponse.errorCode -eq $null) {
 
 Wait-Phase 'Lobby'
 
+Write-Host 'Starting champion select...'
 Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST'
 
 Wait-Phase 'ChampSelect'
 
+Write-Host 'Selecting a random champion...'
 $champions = Invoke-LOLRequest '/lol-champ-select/v1/pickable-champion-ids'
-Write-Host "champions: $champions"
-
-Start-Sleep 10
-Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST' @{
+Invoke-LOLRequest '/lol-champ-select/v1/session/actions/1' 'PATCH' @{
     completed = $True;
     championId = $champions[0]
 }
@@ -303,10 +302,12 @@ Wait-Phase 'InProgress'
 
 Start-Sleep 5
 
+Write-Host 'Dumping LOL schemas...'
 Invoke-GameClientRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_GAME_DIR/swagger.json
 Invoke-GameClientRequest '/swagger/v3/openapi.json' -Mandatory $True -OutFile $LOL_GAME_DIR/openapi.json
 
 # END
+Write-Host 'Finishing...'
 
 Stop-Process -Name 'League of Legends' -ErrorAction Ignore
 
