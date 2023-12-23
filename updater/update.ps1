@@ -258,14 +258,14 @@ js-beautify -f * -r --type js
 Pop-Location
 
 # Create new lobby
-Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
+$lobbyResponse = Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
     customGameLobby = @{
       configuration = @{
         gameMode = "CLASSIC";
         gameMutator = "";
-        gameServerRegion ="";
+        gameServerRegion = "";
         mapId = 11;
-        mutators = {
+        mutators = @{
           id = 1
         };
         spectatorPolicy = "NotAllowed";
@@ -276,6 +276,12 @@ Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
     };
     isCustom = true;
     queueId = -1;
+}
+
+if ($lobbyResponse.errorCode -eq $null) {
+    Write-Host 'Lobby created!'
+} else {
+    Write-Host $lobbyResponse
 }
 
 Wait-Phase 'Lobby'
