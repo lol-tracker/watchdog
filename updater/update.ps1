@@ -276,7 +276,7 @@ Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
     };
     isCustom = true;
     queueId = -1;
-} | Out-Null
+}
 
 Wait-Phase 'Lobby'
 
