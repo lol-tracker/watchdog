@@ -179,7 +179,7 @@ function Wait-Phase {
 
     do {
         Start-Sleep 1
-        $gamePhase = Invoke-LOLRequest '/lol-gameflow/v1/gameflow-phase'-Mandatory $True
+        $gamePhase = Invoke-LOLRequest '/lol-gameflow/v1/gameflow-phase' -Mandatory $True
         Write-Host "Waiting for $phase phase. Current phase: $gamePhase"
     } while ($gamePhase -ne $phase)
 }
@@ -274,7 +274,7 @@ $lobbyResponse = Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
       lobbyName = "uwu owo";
       lobbyPassword = "password123?";
     };
-    isCustom = true;
+    isCustom = $True;
     queueId = -1;
 }
 
