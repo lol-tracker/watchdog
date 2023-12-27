@@ -206,7 +206,7 @@ Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile $LOL_DIR/maps.json
 Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile $LOL_DIR/queues.json
 Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile $LOL_DIR/catalog.json
 
-Invoke-LOLRequest '/plugin-manager/v3/plugins-manifest' -OutFile -Mandatory $True $LOL_DIR/plugin-manifest.json
+Invoke-LOLRequest '/plugin-manager/v3/plugins-manifest' -Mandatory $True -OutFile $LOL_DIR/plugin-manifest.json
 
 Write-Host 'Dumping LOL version...'
 $versionObject = @{}
