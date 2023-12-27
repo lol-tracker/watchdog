@@ -206,6 +206,8 @@ Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile $LOL_DIR/maps.json
 Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile $LOL_DIR/queues.json
 Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile $LOL_DIR/catalog.json
 
+Invoke-LOLRequest '/plugin-manager/v3/plugins-manifest' -OutFile -Mandatory $True $LOL_DIR/plugin-manifest.json
+
 Write-Host 'Dumping LOL version...'
 $versionObject = @{}
 $versionObject.Add('client', (Invoke-LOLRequest '/system/v1/builds' -Mandatory $True).version)
@@ -300,7 +302,7 @@ Invoke-LOLRequest '/lol-champ-select/v1/session/actions/1' 'PATCH' @{
 
 Wait-Phase 'InProgress'
 
-Start-Sleep 5
+Start-Sleep 30
 
 Write-Host 'Dumping LOL schemas...'
 Invoke-GameClientRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_GAME_DIR/swagger.json
