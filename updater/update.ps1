@@ -25,6 +25,7 @@ function Invoke-RiotRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False, # only throw, dont log
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
@@ -44,8 +45,11 @@ function Invoke-RiotRequest {
         $msg = "Failed to $method '$path'! Error: $_"
         if ($Mandatory -ne $True) {
             Warn $msg
-        } else {
+            return $null
+        } elseif ($SilentError -eq $False) {
             Fail $msg
+        } else {
+            throw $_
         }
     }
 
@@ -73,10 +77,11 @@ function Invoke-RCSRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $Mandatory $OutFile
+    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $SilentError $Mandatory $OutFile
 }
 
 function Invoke-LOLRequest {
@@ -85,10 +90,11 @@ function Invoke-LOLRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $Mandatory $OutFile
+    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $SilentError $Mandatory $OutFile
 }
 
 function Invoke-GameClientRequest {
@@ -97,10 +103,11 @@ function Invoke-GameClientRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $Mandatory $OutFile
+    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $SilentError $Mandatory $OutFile
 }
 
 function Create-Folder {
@@ -182,6 +189,26 @@ function Wait-Phase {
         $gamePhase = Invoke-LOLRequest '/lol-gameflow/v1/gameflow-phase' -Mandatory $True
         Write-Host "Waiting for $phase phase. Current phase: $gamePhase"
     } while ($gamePhase -ne $phase)
+}
+
+function Wait-Game-Endpoint {
+    Param (
+        [Parameter(Mandatory=$true)] [String]$endpoint
+    )
+
+    do {
+        Start-Sleep 1
+
+        try {
+            $result = Invoke-GameClientRequest $endpoint -Mandatory $False -SilentError $True
+
+            if ($result.errorCode -eq $null) {
+                break
+            }
+        } catch {
+            # try again
+        }
+    } while ($True)
 }
 
 Create-Folder 'rcs'
@@ -302,7 +329,8 @@ Invoke-LOLRequest '/lol-champ-select/v1/session/actions/1' 'PATCH' @{
 
 Wait-Phase 'InProgress'
 
-Start-Sleep 30
+Write-Host 'Waiting for game API initialization...'
+Wait-Game-Endpoint '/liveclientdata/activeplayername'
 
 Write-Host 'Dumping LOL schemas...'
 Invoke-GameClientRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_GAME_DIR/swagger.json
