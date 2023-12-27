@@ -15,6 +15,7 @@ $PENGU_PLUGIN_LOG_PATH = "$PENGU_PLUGIN_DIR/log.txt"
 
 $RCS_DIR = 'rcs'
 $LOL_DIR = 'lol/' + $LOL_PATCHLINE
+$LOL_GAME_DIR = "$LOL_DIR/game"
 
 function Invoke-RiotRequest {
     Param (
@@ -24,6 +25,7 @@ function Invoke-RiotRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False, # only throw, dont log
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
@@ -37,14 +39,17 @@ function Invoke-RiotRequest {
             -Authentication 'Basic' `
             -Credential $cred `
             -ContentType 'application/json' `
-            -Body $($body | ConvertTo-Json)
+            -Body $($body | ConvertTo-Json -Depth 100)
     } Catch {
         # Better error info
         $msg = "Failed to $method '$path'! Error: $_"
         if ($Mandatory -ne $True) {
             Warn $msg
-        } else {
+            return $null
+        } elseif ($SilentError -eq $False) {
             Fail $msg
+        } else {
+            throw $_
         }
     }
 
@@ -72,10 +77,11 @@ function Invoke-RCSRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $Mandatory $OutFile
+    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $SilentError $Mandatory $OutFile
 }
 
 function Invoke-LOLRequest {
@@ -84,10 +90,24 @@ function Invoke-LOLRequest {
         [Parameter(Mandatory=$false)] [String]$method = 'GET',
         [Parameter(Mandatory=$false)] $body = $null,
         [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $Mandatory $OutFile
+    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $SilentError $Mandatory $OutFile
+}
+
+function Invoke-GameClientRequest {
+    Param (
+        [Parameter(Mandatory=$true)]  [String]$path,
+        [Parameter(Mandatory=$false)] [String]$method = 'GET',
+        [Parameter(Mandatory=$false)] $body = $null,
+        [Parameter(Mandatory=$false)] [bool]$Mandatory = $False,
+        [Parameter(Mandatory=$false)] [bool]$SilentError = $False,
+        [Parameter(Mandatory=$false)] [String]$OutFile = $null
+    )
+
+    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $SilentError $Mandatory $OutFile
 }
 
 function Create-Folder {
@@ -159,9 +179,42 @@ function Fail {
     throw $message
 }
 
+function Wait-Phase {
+    Param (
+        [Parameter(Mandatory=$true)] [String]$phase
+    )
+
+    do {
+        Start-Sleep 1
+        $gamePhase = Invoke-LOLRequest '/lol-gameflow/v1/gameflow-phase' -Mandatory $True
+        Write-Host "Waiting for $phase phase. Current phase: $gamePhase"
+    } while ($gamePhase -ne $phase)
+}
+
+function Wait-Game-Endpoint {
+    Param (
+        [Parameter(Mandatory=$true)] [String]$endpoint
+    )
+
+    do {
+        Start-Sleep 1
+
+        try {
+            $result = Invoke-GameClientRequest $endpoint -Mandatory $False -SilentError $True
+
+            if ($result.errorCode -eq $null) {
+                break
+            }
+        } catch {
+            # try again
+        }
+    } while ($True)
+}
+
 Create-Folder 'rcs'
 Create-Folder 'lol'
 Create-Folder $LOL_DIR
+Create-Folder $LOL_GAME_DIR
 
 Write-Host 'Dumping RCS schemas...'
 Invoke-RCSRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $RCS_DIR/swagger.json
@@ -179,6 +232,8 @@ Write-Host 'Dumping LCU data...'
 Invoke-LOLRequest '/lol-maps/v2/maps' -OutFile $LOL_DIR/maps.json
 Invoke-LOLRequest '/lol-game-queues/v1/queues' -OutFile $LOL_DIR/queues.json
 Invoke-LOLRequest '/lol-store/v1/catalog' -OutFile $LOL_DIR/catalog.json
+
+Invoke-LOLRequest '/plugin-manager/v3/plugins-manifest' -Mandatory $True -OutFile $LOL_DIR/plugin-manifest.json
 
 Write-Host 'Dumping LOL version...'
 $versionObject = @{}
@@ -230,6 +285,61 @@ Write-Host 'Beautifying plugins...'
 Push-Location $plugins_dir
 js-beautify -f * -r --type js
 Pop-Location
+
+Write-Host 'Creating a custom lobby...'
+$lobbyResponse = Invoke-LOLRequest '/lol-lobby/v2/lobby' 'POST' @{
+    customGameLobby = @{
+      configuration = @{
+        gameMode = "CLASSIC";
+        gameMutator = "";
+        gameServerRegion = "";
+        mapId = 11;
+        mutators = @{
+          id = 1
+        };
+        spectatorPolicy = "NotAllowed";
+        teamSize = 5;
+      };
+      lobbyName = "uwu owo";
+      lobbyPassword = "password123?";
+    };
+    isCustom = $True;
+    queueId = -1;
+}
+
+if ($lobbyResponse.errorCode -eq $null) {
+    Write-Host 'Lobby created!'
+} else {
+    Write-Host $lobbyResponse
+}
+
+Wait-Phase 'Lobby'
+
+Write-Host 'Starting champion select...'
+Invoke-LOLRequest '/lol-lobby/v1/lobby/custom/start-champ-select' 'POST'
+
+Wait-Phase 'ChampSelect'
+
+Write-Host 'Selecting a random champion...'
+$champions = Invoke-LOLRequest '/lol-champ-select/v1/pickable-champion-ids'
+Invoke-LOLRequest '/lol-champ-select/v1/session/actions/1' 'PATCH' @{
+    completed = $True;
+    championId = $champions[0]
+}
+
+Wait-Phase 'InProgress'
+
+Write-Host 'Waiting for game API initialization...'
+Wait-Game-Endpoint '/liveclientdata/activeplayername'
+
+Write-Host 'Dumping LOL schemas...'
+Invoke-GameClientRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $LOL_GAME_DIR/swagger.json
+Invoke-GameClientRequest '/swagger/v3/openapi.json' -Mandatory $True -OutFile $LOL_GAME_DIR/openapi.json
+
+# END
+Write-Host 'Finishing...'
+
+Stop-Process -Name 'League of Legends' -ErrorAction Ignore
 
 if ($copyLogs -Eq $True) {
     Write-Host 'Copying logs...'
