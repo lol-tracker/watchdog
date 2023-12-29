@@ -144,8 +144,11 @@ function Copy-Logs {
     $logsPath = "$env:GITHUB_WORKSPACE/updaterLogs"
     New-Item -Path $logsPath -ItemType Directory -Force
     
-    Write-Output "logs-upload=true" >> $env:GITHUB_OUTPUT
-    Write-Output "logs-path=$logsPath" >> $env:GITHUB_OUTPUT
+    $Stream = [System.IO.StreamWriter]::new($env:GITHUB_OUTPUT)
+    $Stream.WriteLine("logs-upload=true")
+    $Stream.WriteLine("logs-path=$logsPath")
+    $Stream.Flush()
+    $Stream.Close()
     
     if (Test-Path $PENGU_PLUGIN_LOG_PATH) {
         Copy-Item $PENGU_PLUGIN_LOG_PATH -Destination "$logsPath/pengu_log.txt"
