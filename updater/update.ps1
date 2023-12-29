@@ -142,8 +142,7 @@ function Delete-File {
 
 function Copy-Logs {
     $logsPath = "$env:GITHUB_WORKSPACE/updaterLogs"
-    Write-Host "logsPath: $logsPath"
-    Create-Folder $logsPath
+    New-Item -Path $logsPath -ItemType Directory -Force
     
     Write-Output "logs-upload=true" >> $env:GITHUB_OUTPUT
     Write-Output "logs-path=$logsPath" >> $env:GITHUB_OUTPUT
