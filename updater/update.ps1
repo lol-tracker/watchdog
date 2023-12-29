@@ -279,11 +279,11 @@ Clean-Folder $plugins_dir
 Copy-Item -Force -Recurse -Verbose -Path "$PENGU_PLUGIN_DIR/output/*" -Destination $plugins_dir
 
 Write-Host 'Installing js beautifier...'
-npm i -g js-beautify
+npm i -g prettier
 
 Write-Host 'Beautifying plugins...'
 Push-Location $plugins_dir
-js-beautify -f * -r --type js
+prettier . --write
 Pop-Location
 
 Write-Host 'Creating a custom lobby...'
