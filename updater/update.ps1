@@ -141,6 +141,8 @@ function Delete-File {
 }
 
 function Copy-Logs {
+    Write-Host 'Copy-Logs'
+
     $logsPath = "$env:GITHUB_WORKSPACE/updaterLogs"
     New-Item -Path $logsPath -ItemType Directory -Force
     
@@ -150,16 +152,22 @@ function Copy-Logs {
     $Stream.Flush()
     $Stream.Close()
     
+    Write-Host 'post output write'
+
     if (Test-Path $PENGU_PLUGIN_LOG_PATH) {
+        Write-Host 'copying pengu log'
         Copy-Item $PENGU_PLUGIN_LOG_PATH -Destination "$logsPath/pengu_log.txt"
     }
 
     $leagueLogsPath = "$LCU_DIR/Logs/LeagueClient Logs/*"
     if (Test-Path $leagueLogsPath) {
         $path = "$logsPath/lcu/"
+        Write-Host "copying league log ($path / $leagueLogsPath)"
         New-Item -Path $path -ItemType Directory -Force
         Copy-Item -Force -Recurse -Path $leagueLogsPath -Destination $path
     }
+
+    Write-Host 'end log'
 }
 
 $copyLogs = $false
