@@ -17,6 +17,11 @@ $RCS_DIR = 'rcs'
 $LOL_DIR = 'lol/' + $LOL_PATCHLINE
 $LOL_GAME_DIR = "$LOL_DIR/game"
 
+Write-Host 'RCS_PORT: ' + $RCS_PORT
+Write-Host 'RCS_PWD: ' + $RCS_PWD
+Write-Host 'LOL_PORT: ' + $LOL_PORT
+Write-Host 'LOL_PWD: ' + $LOL_PWD
+
 function Invoke-RiotRequest {
     Param (
         [Parameter(Mandatory=$true)]  [String]$port,
@@ -226,6 +231,18 @@ Create-Folder 'rcs'
 Create-Folder 'lol'
 Create-Folder $LOL_DIR
 Create-Folder $LOL_GAME_DIR
+
+# Print RioClient processes
+$processes = $(
+	Get-Process | Where-Object { $_.ProcessName -like '*RiotClient*' };
+	Get-Process | Where-Object { $_.ProcessName -like '*LeagueClient*' }
+)
+if ($processes.Count -eq 0) {
+	Fail 'No league/rcs processes running!'
+} else {
+	Write-Host 'Active processes:'
+	Write-Host $processes	
+}
 
 Write-Host 'Dumping RCS schemas...'
 Invoke-RCSRequest '/swagger/v2/swagger.json' -Mandatory $True -OutFile $RCS_DIR/swagger.json
