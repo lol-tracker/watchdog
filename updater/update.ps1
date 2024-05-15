@@ -58,7 +58,7 @@ function Invoke-RiotRequest {
 
         if ($result -is [string] ||
             $result -is [number]) {
-            Out-File $OutFile $result
+            Out-File -FilePath $OutFile -InputObject $result
         }
         else
         {
