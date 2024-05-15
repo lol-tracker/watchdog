@@ -81,7 +81,7 @@ function Invoke-RCSRequest {
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $SilentError $Mandatory $OutFile
+    Return Invoke-RiotRequest $RCS_PORT $RCS_PWD $path $method $body $Mandatory $SilentError $OutFile
 }
 
 function Invoke-LOLRequest {
@@ -94,7 +94,7 @@ function Invoke-LOLRequest {
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $SilentError $Mandatory $OutFile
+    Return Invoke-RiotRequest $LOL_PORT $LOL_PWD $path $method $body $Mandatory $SilentError $OutFile
 }
 
 function Invoke-GameClientRequest {
@@ -107,7 +107,7 @@ function Invoke-GameClientRequest {
         [Parameter(Mandatory=$false)] [String]$OutFile = $null
     )
 
-    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $SilentError $Mandatory $OutFile
+    Return Invoke-RiotRequest 2999 'doesntmatter' $path $method $body $Mandatory $SilentError $OutFile
 }
 
 function Create-Folder {
